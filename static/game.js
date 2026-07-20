@@ -108,6 +108,22 @@ document.querySelectorAll(".key").forEach((botao) => {
     });
 });
 
+document.getElementById("helpBtn").addEventListener("click", () => {
+    document.getElementById("helpPanel").classList.toggle("hidden");
+});
+
+document.getElementById("closeHelp").addEventListener("click", () => {
+    document.getElementById("helpPanel").classList.add("hidden");
+});
+
+document.getElementById("settingsBtn").addEventListener("click", () => {
+    document.getElementById("settingsPanel").classList.toggle("hidden");
+});
+
+document.getElementById("closeSettings").addEventListener("click", () => {
+    document.getElementById("settingsPanel").classList.add("hidden");
+});
+
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/static/sw.js")        
 }

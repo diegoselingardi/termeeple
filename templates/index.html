@@ -8,30 +8,57 @@
   <title>Termeeple</title>
 </head>
 <body>
-  <h1>Termeeple</h1>
-  <p>Dia do jogo: {{ day_index }}</p>
-  <p>Tamanho da palavra: {{ word_length }}</p>
-  <p>Tentativas máximas: {{ max_attempts }}</p>
+  <div class="table">
+    <header class="box-label">
+      <h1 class="box-label__title">TERM<span class="meeple">●</span>EEPLE</h1>
+      <p class="box-label__subtitle">Uma versão baseada em Wordle para quem joga tabuleiro</p>
+    </header>
 
-  <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}">    
-    {% for linha in range(max_attempts) %}
-      <div class="board-row">
-        {% for coluna in range(word_length) %}
-          <div class="tile" id="tile-{{ linha }}-{{ coluna }}"></div>
-        {% endfor %}
-      </div>
-    {% endfor %}
+  <div class="hud">
+    <button id="helpBtn" class="hud__icon-btn" aria-label="Como jogar">?</button>
+    <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
   </div>
 
-  <div id="keyboard">
-    {% for linha in keyboard_rows %}
-      <div class="keyboard-row">
-        {% for tecla in linha %}
-          <button class="key" data-key="{{ tecla }}"> {{ tecla }} </button>
-        {% endfor %}
-      </div>
-    {% endfor %}
+    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}">    
+      {% for linha in range(max_attempts) %}
+        <div class="board-row">
+          {% for coluna in range(word_length) %}
+            <div class="tile" id="tile-{{ linha }}-{{ coluna }}"></div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div id="keyboard">
+      {% for linha in keyboard_rows %}
+        <div class="keyboard-row">
+          {% for tecla in linha %}
+            <button class="key" data-key="{{ tecla }}"> {{ tecla }} </button>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
   </div>
+  
+  <div id="helpPanel" class="help-panel hidden">
+    <h2>Como jogar</h2>
+    <ul>
+      <li>Adivinhe a palavra de 5 letras sobre o mundo dos jogos de tabuleiro.</li>
+      <li>Você tem 6 tentativas. Cada uma precisa ter 5 letras.</li>
+      <li><span class="legend legend--correct">Verde</span>: letra certa, posição certa.</li>
+      <li><span class="legend legend--present">Dourado</span>: letra existe, posição errada.</li>
+      <li><span class="legend legend--absent">Cinza</span>: letra não está na palavra.</li>
+      <li>Uma palavra nova todo dia — todo mundo joga a mesma.</li>
+    </ul>
+    <button id="closeHelp" class="btn">Entendi</button>
+  </div>
+
+  <div id="settingsPanel" class="help-panel hidden">
+    <h2>Configurações</h2>
+    <p>Em breve.</p>
+    <button id="closeSettings" class="btn">Fechar</button>
+  </div>
+
   <script src="/static/game.js"></script>
 </body>
 </html>

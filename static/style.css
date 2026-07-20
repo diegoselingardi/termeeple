@@ -1,16 +1,25 @@
 /* ---------- variáveis (cores reaproveitadas no site inteiro) ---------- */
 :root {
-  --felt: #16332A;
-  --parchment: #F1E7CC;
-  --wood: #8B5A2B;
-  --ivory: #FAF4E4;
+  --felt: #2E2E2E;       /* fundo escuro, era verde -- agora chumbo mais profundo */
+  --parchment: #FFFFFF;  /* branco puro, era creme */
+  --wood: #474747;       /* cinza da marca, era marrom */
+  --wood-dark: #2A2A2A;  /* sombra mais escura do cinza */
+  --ivory: #F5F5F3;      /* quase branco, pro texto no fundo escuro */
 
-  --correct: #4E8F55;
-  --present: #C79A2A;
-  --absent: #4A4038;
+  --orange: #E97B30;     /* laranja da marca -- variável nova */
+  --orange-dark: #B85F22;/* sombra do laranja -- variável nova */
+
+  --correct: #4E8F55;    /* mantido -- verde não conflita com sua paleta */
+  --present: #D8A23A;    /* dourado, propositalmente diferente do laranja principal */
+  --absent: #6B6B6B;     /* cinza médio, visível no fundo escuro */
 }
 
 /* ---------- fundo geral ---------- */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -18,25 +27,25 @@ body {
   color: var(--ivory);
   font-family: system-ui, sans-serif;
   padding: 20px;
-}
-
-h1 {
-  color: var(--parchment);
+  display: flex;
+  justify-content: center;
 }
 
 /* ---------- tabuleiro (Grid) ---------- */
 #board {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-width: 320px;
-  margin: 20px 0;
+  gap: 6px;
+  width: 100%;
+  max-width: 280px;
+  margin: 0;
+  align-self: center;
 }
 
 .board-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr); /* fixo em 5 por enquanto -- vira variável no Módulo 6 */
-  gap: 8px;
+  gap: 5px;
 }
 
 .tile {
@@ -47,7 +56,7 @@ h1 {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   text-transform: uppercase;
 }
 
@@ -61,26 +70,141 @@ h1 {
 #keyboard {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-width: 480px;
+  gap: 5px;
+  width: 100%;
+  max-width: 420px;
+  align-self: center;
 }
 
 .keyboard-row {
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .key {
   flex: 1;
-  padding: 12px 0;
+  padding: 10px 4px;
   border: none;
   border-radius: 6px;
   background: var(--wood);
   color: var(--ivory);
   font-weight: bold;
+  font-size: 0.85rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .key:active {
   transform: translateY(2px);
+}
+
+.table {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.box-label {  
+  text-align: center;
+}
+
+.box-label__ribbon {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wood);
+  margin-bottom: 2px;
+}
+
+.box-label__title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 2px 0;
+  line-height: 1;
+  color: var(--orange);
+}
+
+.box-label__title .meeple {
+  color: var(--ivory);
+  font-size: 0.75em;
+}
+
+.box-label__subtitle {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ivory);
+  margin: 0;
+}
+
+.key[data-key="ENTER"],
+.key[data-key="BACK"] {
+  flex: 1.6;
+  font-size: 0.65rem;
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  max-width: 460px;
+  margin: 0 auto 8px;
+  padding: 0 4px;
+}
+
+.hud__icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--wood);
+  background: transparent;
+  color: var(--ivory);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+.help-panel {
+  background: var(--parchment);
+  color: var(--wood);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: left;
+  max-width: 400px;
+  margin: 16px auto;
+}
+
+.help-panel h2 {
+  margin-top: 0;
+}
+
+.help-panel ul {
+  padding-left: 18px;
+  font-size: 0.9rem;
+}
+
+.legend {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  color: white;
+}
+.legend--correct { background: var(--correct); }
+.legend--present { background: var(--present); }
+.legend--absent { background: var(--absent); }
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--orange);
+  color: white;
+  display: block;
+  margin: 14px auto 0;
 }
