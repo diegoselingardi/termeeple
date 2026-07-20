@@ -58,11 +58,15 @@ function submitGuess() {
             },
             body: JSON.stringify({
             guess: guess,
-            day_index: dayIndex,
-            attempt_number: currentRow + 1
+            day_index: dayIndex
             })
         })
-            .then((response) => response.json())
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Não foi possível enviar o palpite. Recarregue a página.");
+                }
+                return response.json();
+            })
             .then((data) => {
                 for (let i = 0; i < WORD_LENGTH; i++) {
                     const tile = getTile(currentRow, i);
@@ -231,6 +235,7 @@ document.getElementById("closeStats").addEventListener("click", () => {
 document.getElementById("backdrop").addEventListener("click", () => {
     document.getElementById("helpPanel").classList.add("hidden");
     document.getElementById("settingsPanel").classList.add("hidden");
+    document.getElementById("statsPanel").classList.add("hidden");
     document.getElementById("backdrop").classList.add("hidden");
 });
 
