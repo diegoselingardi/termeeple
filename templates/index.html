@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <link rel="stylesheet" href="/static/style.css">   
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#16332A">
+  <meta charset="UTF-8">
+  <title>Termeeple</title>
+</head>
+<body>
+  <h1>Termeeple</h1>
+  <p>Dia do jogo: {{ day_index }}</p>
+  <p>Tamanho da palavra: {{ word_length }}</p>
+  <p>Tentativas máximas: {{ max_attempts }}</p>
+
+  <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}">    
+    {% for linha in range(max_attempts) %}
+      <div class="board-row">
+        {% for coluna in range(word_length) %}
+          <div class="tile" id="tile-{{ linha }}-{{ coluna }}"></div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div id="keyboard">
+    {% for linha in keyboard_rows %}
+      <div class="keyboard-row">
+        {% for tecla in linha %}
+          <button class="key" data-key="{{ tecla }}"> {{ tecla }} </button>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+  <script src="/static/game.js"></script>
+</body>
+</html>

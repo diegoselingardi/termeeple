@@ -1,0 +1,86 @@
+/* ---------- variáveis (cores reaproveitadas no site inteiro) ---------- */
+:root {
+  --felt: #16332A;
+  --parchment: #F1E7CC;
+  --wood: #8B5A2B;
+  --ivory: #FAF4E4;
+
+  --correct: #4E8F55;
+  --present: #C79A2A;
+  --absent: #4A4038;
+}
+
+/* ---------- fundo geral ---------- */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--felt);
+  color: var(--ivory);
+  font-family: system-ui, sans-serif;
+  padding: 20px;
+}
+
+h1 {
+  color: var(--parchment);
+}
+
+/* ---------- tabuleiro (Grid) ---------- */
+#board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+  margin: 20px 0;
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* fixo em 5 por enquanto -- vira variável no Módulo 6 */
+  gap: 8px;
+}
+
+.tile {
+  aspect-ratio: 1;
+  border: 2px solid var(--wood);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.4rem;
+  text-transform: uppercase;
+}
+
+/* essas três ainda não têm efeito -- entram no Módulo 6, quando o JS
+   marcar cada tile como correct/present/absent de verdade */
+.tile.correct { background: var(--correct); border-color: var(--correct); }
+.tile.present { background: var(--present); border-color: var(--present); }
+.tile.absent  { background: var(--absent);  border-color: var(--absent); }
+
+/* ---------- teclado (Flexbox) ---------- */
+#keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 480px;
+}
+
+.keyboard-row {
+  display: flex;
+  gap: 5px;
+}
+
+.key {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--wood);
+  color: var(--ivory);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.key:active {
+  transform: translateY(2px);
+}
