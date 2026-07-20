@@ -8,6 +8,7 @@ colorama==0.4.6
 fastapi==0.139.0
 h11==0.16.0
 idna==3.18
+itsdangerous==2.2.0
 iniconfig==2.3.0
 Jinja2==3.1.6
 MarkupSafe==3.0.3

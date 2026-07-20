@@ -1,12 +1,20 @@
-from fastapi import FastAPI
+import os
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi import Request
+from starlette.middleware.sessions import SessionMiddleware
 from game_logic import evaluate_guess, is_win
 from words import word_for_day, today_index
 from pydantic import BaseModel
 
 app = FastAPI()
+# SECRET_KEY precisa vir de variável de ambiente em produção (ex.: configurar no Render).
+# O valor abaixo é só um fallback pra rodar localmente sem configurar nada.
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("SECRET_KEY", "dev-insecure-key-troque-em-producao"),
+)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -21,7 +29,6 @@ KEYBOARD_ROWS = [
 class GuessRequest(BaseModel):
     guess: str
     day_index: int
-    attempt_number: int
 
 @app.get("/")
 def read_root(request: Request):
@@ -46,10 +53,33 @@ def state():
     return dias 
 
 @app.post("/api/guess")
-def guess(payload: GuessRequest):
-    resposta = word_for_day(payload.day_index)
+def guess(payload: GuessRequest, request: Request):
+    dia_atual = today_index()
+    if payload.day_index != dia_atual:
+        raise HTTPException(status_code=409, detail="dia desatualizado, recarregue a página")
+
+    if len(payload.guess) != WORD_LENGTH or not payload.guess.isalpha():
+        raise HTTPException(status_code=422, detail="palpite inválido")
+
+    session_key = f"attempts_{dia_atual}"
+    tentativas_usadas = request.session.get(session_key, 0)
+
+    if tentativas_usadas >= MAX_ATTEMPTS:
+        raise HTTPException(status_code=400, detail="número de tentativas excedido")
+
+    tentativas_usadas += 1
+    request.session[session_key] = tentativas_usadas
+
+    resposta = word_for_day(dia_atual)
     avaliacao = evaluate_guess(payload.guess, resposta)
     ganhou = is_win(avaliacao)
-    acabou = ganhou or payload.attempt_number >= MAX_ATTEMPTS
+    acabou = ganhou or tentativas_usadas >= MAX_ATTEMPTS
     resposta_revelada = resposta if acabou else None
-    return {"evaluation": avaliacao, "is_win": ganhou, "is_game_over": acabou, "revealed_word": resposta_revelada}
+
+    return {
+        "evaluation": avaliacao,
+        "is_win": ganhou,
+        "is_game_over": acabou,
+        "revealed_word": resposta_revelada,
+        "attempt_number": tentativas_usadas,
+    }
