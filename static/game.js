@@ -12,6 +12,7 @@ fetch("/api/state")
     .then((response) => response.json())
     .then((data) => {
         dayIndex = data.day_index;
+        restoreBoardState();
     });
 
 function getTile(row, col) {
@@ -69,14 +70,103 @@ function submitGuess() {
                     tile.classList.add(status);                        
                 }
                 gameOver = data.is_game_over;
+
+                if (gameOver) {
+                    recordResult(data.is_win, currentRow + 1, dayIndex);
+                    showStatsPanel();
+                }
+
                 currentRow++;
                 currentCol = 0;
+                saveBoardState(); // nova linha
             }); 
     }
 };
 
+function isModalOpen() {
+    return !document.getElementById("backdrop").classList.contains("hidden");
+}
+
+function boardStorageKey(day) {
+    return `termeeple:board:${day}`;
+}
+
+function saveBoardState() {
+    if (dayIndex === null) return;
+
+    const rows = [];
+    for (let r = 0; r < MAX_ATTEMPTS; r++) {
+        const row = [];
+        for (let c = 0; c < WORD_LENGTH; c++) {
+            const tile = getTile(r, c);
+            const status = tile.classList.contains("correct") ? "correct"
+                         : tile.classList.contains("present") ? "present"
+                         : tile.classList.contains("absent")  ? "absent"
+                         : null;
+            row.push({ letter: tile.textContent, status: status });
+        }
+        rows.push(row);
+    }
+
+    const state = { currentRow, currentCol, gameOver, rows };
+    try {
+        localStorage.setItem(boardStorageKey(dayIndex), JSON.stringify(state));
+    } catch (e) {
+        /* ignora se não der pra salvar */
+    }
+}
+
+function restoreBoardState() {
+    let saved;
+    try {
+        const raw = localStorage.getItem(boardStorageKey(dayIndex));
+        if (!raw) return;
+        saved = JSON.parse(raw);
+    } catch (e) {
+        return;
+    }
+
+    currentRow = saved.currentRow;
+    currentCol = saved.currentCol;
+    gameOver = saved.gameOver;
+
+    saved.rows.forEach((row, r) => {
+        row.forEach((cell, c) => {
+            const tile = getTile(r, c);
+            tile.textContent = cell.letter;
+            if (cell.status) tile.classList.add(cell.status);
+        });
+    });
+}
+
+function showStatsPanel() {
+    renderStats();
+    document.getElementById("statsPanel").classList.remove("hidden");
+    document.getElementById("backdrop").classList.remove("hidden");
+}
+
+function typeLetter(letter) {
+    if (gameOver) return;
+    if (currentCol < WORD_LENGTH) {
+        const tile = getTile(currentRow, currentCol);
+        tile.textContent = letter.toUpperCase();
+        currentCol++;
+    }
+    saveBoardState(); // nova linha
+}
+
+function doBackspace() {
+    if (gameOver) return;
+    if (currentCol > 0) {
+        currentCol--;
+        const tile = getTile(currentRow, currentCol);
+        tile.textContent = "";
+    }
+    saveBoardState(); // nova linha
+}
+
 window.addEventListener("keydown", (event) => {
-    if (gameOver) {
+    if (gameOver || isModalOpen()) {
         return;
     }
 
@@ -97,6 +187,9 @@ window.addEventListener("keydown", (event) => {
 
 document.querySelectorAll(".key").forEach((botao) => {
     botao.addEventListener("click", () => {
+        if (isModalOpen()) {
+            return;
+        }
         const letra = botao.dataset.key;
         if (letra === "BACK") {
             doBackspace();
@@ -109,19 +202,40 @@ document.querySelectorAll(".key").forEach((botao) => {
 });
 
 document.getElementById("helpBtn").addEventListener("click", () => {
-    document.getElementById("helpPanel").classList.toggle("hidden");
+    document.getElementById("helpPanel").classList.remove("hidden");
+    document.getElementById("backdrop").classList.remove("hidden");
 });
 
 document.getElementById("closeHelp").addEventListener("click", () => {
     document.getElementById("helpPanel").classList.add("hidden");
+    document.getElementById("backdrop").classList.add("hidden");
 });
 
 document.getElementById("settingsBtn").addEventListener("click", () => {
-    document.getElementById("settingsPanel").classList.toggle("hidden");
+    document.getElementById("settingsPanel").classList.remove("hidden");
+    document.getElementById("backdrop").classList.remove("hidden");
 });
 
 document.getElementById("closeSettings").addEventListener("click", () => {
     document.getElementById("settingsPanel").classList.add("hidden");
+    document.getElementById("backdrop").classList.add("hidden");
+});
+
+document.getElementById("statsBtn").addEventListener("click", showStatsPanel);
+
+document.getElementById("closeStats").addEventListener("click", () => {
+    document.getElementById("statsPanel").classList.add("hidden");
+    document.getElementById("backdrop").classList.add("hidden");
+});
+
+document.getElementById("backdrop").addEventListener("click", () => {
+    document.getElementById("helpPanel").classList.add("hidden");
+    document.getElementById("settingsPanel").classList.add("hidden");
+    document.getElementById("backdrop").classList.add("hidden");
+});
+
+document.getElementById("colorblindToggle").addEventListener("change", (event) => {
+    document.body.classList.toggle("colorblind", event.target.checked);
 });
 
 if ("serviceWorker" in navigator) {

@@ -3,7 +3,7 @@ const CACHE_NAME = "termeeple-v1";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(["/", "/static/style.css", "/static/game.js"]);
+      return cache.addAll(["/", "/static/style.css", "/static/game.js", "/static/stats.js"]);
     })
   );
 });

@@ -16,6 +16,7 @@
 
   <div class="hud">
     <button id="helpBtn" class="hud__icon-btn" aria-label="Como jogar">?</button>
+    <button id="statsBtn" class="hud__icon-btn" aria-label="Progresso">📊</button>
     <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
   </div>
 
@@ -39,26 +40,107 @@
       {% endfor %}
     </div>
   </div>
+
+  <div id="backdrop" class="backdrop hidden"></div>
   
   <div id="helpPanel" class="help-panel hidden">
     <h2>Como jogar</h2>
     <ul>
       <li>Adivinhe a palavra de 5 letras sobre o mundo dos jogos de tabuleiro.</li>
       <li>Você tem 6 tentativas. Cada uma precisa ter 5 letras.</li>
-      <li><span class="legend legend--correct">Verde</span>: letra certa, posição certa.</li>
-      <li><span class="legend legend--present">Dourado</span>: letra existe, posição errada.</li>
-      <li><span class="legend legend--absent">Cinza</span>: letra não está na palavra.</li>
-      <li>Uma palavra nova todo dia — todo mundo joga a mesma.</li>
     </ul>
+
+    <div class="example">
+      <div class="example__row">
+        <div class="example__tile correct">T</div>
+        <div class="example__tile">U</div>
+        <div class="example__tile">R</div>
+        <div class="example__tile">N</div>
+        <div class="example__tile">O</div>
+      </div>
+      <p>A letra <strong>T</strong> faz parte da palavra e está na posição certa.</p>
+    </div>
+
+    <div class="example">
+      <div class="example__row">
+        <div class="example__tile">T</div>
+        <div class="example__tile">R</div>
+        <div class="example__tile present">O</div>
+        <div class="example__tile">C</div>
+        <div class="example__tile">A</div>
+      </div>
+      <p>A letra <strong>O</strong> faz parte da palavra, mas em outra posição.</p>
+    </div>
+
+    <div class="example">
+      <div class="example__row">
+        <div class="example__tile">R</div>
+        <div class="example__tile">E</div>
+        <div class="example__tile absent">G</div>
+        <div class="example__tile">R</div>
+        <div class="example__tile">A</div>
+      </div>
+      <p>A letra <strong>G</strong> não faz parte da palavra.</p>
+    </div>
+
+    <p class="help-panel__footer">Uma palavra nova todo dia, todo mundo joga a mesma.</p>
+
     <button id="closeHelp" class="btn">Entendi</button>
   </div>
 
   <div id="settingsPanel" class="help-panel hidden">
     <h2>Configurações</h2>
-    <p>Em breve.</p>
+
+    <div class="setting-row">
+      <div>
+        <strong>Modo daltônico</strong>
+        <p class="setting-row__desc">Troca as cores de acerto por tons mais fáceis de diferenciar.</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="colorblindToggle">
+        <span class="switch__slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-social">
+      <p class="settings-social__title">Siga o Canal do Tio Di</p>
+      <div class="settings-social__links">
+        <a href="https://www.instagram.com/canaldotiodi/" target="_blank" class="btn btn--outline">Instagram</a>
+        <a href="https://www.youtube.com/@canaldotiodi" target="_blank" class="btn btn--outline">YouTube</a>
+        <a href="https://www.tiktok.com/@canaldotiodi" target="_blank" class="btn btn--outline">TikTok</a>
+      </div>
+      </br>
+    </div>
+
     <button id="closeSettings" class="btn">Fechar</button>
   </div>
 
+  <div id="statsPanel" class="help-panel hidden">
+    <h2>Progresso</h2>
+    <div class="stats-grid">
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statGames">0</div>
+        <div class="stats-grid__label">jogos</div>
+      </div>
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statWinRate">0%</div>
+        <div class="stats-grid__label">de vitórias</div>
+      </div>
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statStreak">0</div>
+        <div class="stats-grid__label">sequência atual</div>
+      </div>
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statMaxStreak">0</div>
+        <div class="stats-grid__label">melhor sequência</div>
+      </div>
+    </div>
+    <h3>Distribuição de tentativas</h3>
+    <div id="distList" class="dist-list"></div>
+    <button id="closeStats" class="btn">Fechar</button>
+  </div>
+
+  <script src="/static/stats.js"></script>
   <script src="/static/game.js"></script>
 </body>
 </html>
