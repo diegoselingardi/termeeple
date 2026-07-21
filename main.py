@@ -62,9 +62,11 @@ def read_root(request: Request):
         },
     )
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @app.get("/api/state")
 def state():
@@ -78,9 +80,7 @@ def guess(request: Request, payload: GuessRequest):
     dia_atual = today_index()
     if payload.day_index != dia_atual:
         logger.warning(
-            "day_index desatualizado recebido (cliente=%s, atual=%s)",
-            payload.day_index,
-            dia_atual
+            "day_index desatualizado recebido (cliente=%s, atual=%s)", payload.day_index, dia_atual
         )
         raise HTTPException(status_code=409, detail="dia desatualizado, recarregue a página")
 
