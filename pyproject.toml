@@ -1,0 +1,9 @@
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# E/F = erros e bugs reais (pycodestyle/pyflakes)
+# I    = imports desorganizados
+# UP   = sintaxe desatualizada pra versão do Python usada
+# B    = padrões que costumam virar bug (flake8-bugbear)
+select = ["E", "F", "I", "UP", "B"]
