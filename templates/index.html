@@ -21,11 +21,11 @@
     <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
   </div>
 
-    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}">    
+    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" style="--cols: {{ word_length }}">
       {% for linha in range(max_attempts) %}
         <div class="board-row">
           {% for coluna in range(word_length) %}
-            <div class="tile" id="tile-{{ linha }}-{{ coluna }}"></div>
+            <div class="tile{% if coluna in segment_boundaries %} tile--group-start{% endif %}" id="tile-{{ linha }}-{{ coluna }}"></div>
           {% endfor %}
         </div>
       {% endfor %}
@@ -47,8 +47,8 @@
   <div id="helpPanel" class="help-panel hidden">
     <h2>Como jogar</h2>
     <ul>
-      <li>Adivinhe a palavra de 5 letras sobre o mundo dos jogos de tabuleiro.</li>
-      <li>Você tem 6 tentativas. Cada uma precisa ter 5 letras.</li>
+      <li>Adivinhe o nome de um jogo de tabuleiro. Cada dia tem uma palavra de um tamanho diferente, de 5 a 10 letras.</li>
+      <li>Você tem 6 tentativas. Cada uma precisa ter o mesmo tamanho da palavra do dia.</li>
     </ul>
 
     <div class="example">

@@ -11,7 +11,7 @@ from slowapi.util import get_remote_address
 from starlette.middleware.sessions import SessionMiddleware
 
 from game_logic import evaluate_guess, is_win
-from words import today_index, word_for_day
+from words import segment_boundaries, segments_for_day, today_index, word_for_day
 
 logger = logging.getLogger("termeeple")
 logger.setLevel(logging.INFO)
@@ -36,7 +36,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 MAX_ATTEMPTS = 6
-WORD_LENGTH = 5
 KEYBOARD_ROWS = [
     list("QWERTYUIOP"),
     list("ASDFGHJKLÇ"),
@@ -51,14 +50,16 @@ class GuessRequest(BaseModel):
 
 @app.get("/")
 def read_root(request: Request):
+    dia_atual = today_index()
     return templates.TemplateResponse(
         request,
         "index.html",
         {
-            "day_index": today_index(),
-            "word_length": WORD_LENGTH,
+            "day_index": dia_atual,
+            "word_length": len(word_for_day(dia_atual)),
             "max_attempts": MAX_ATTEMPTS,
             "keyboard_rows": KEYBOARD_ROWS,
+            "segment_boundaries": segment_boundaries(segments_for_day(dia_atual)),
         },
     )
 
@@ -70,8 +71,12 @@ def health():
 
 @app.get("/api/state")
 def state():
-    dias = {"day_index": today_index(), "word_length": WORD_LENGTH, "max_attempts": MAX_ATTEMPTS}
-    return dias
+    dia_atual = today_index()
+    return {
+        "day_index": dia_atual,
+        "word_length": len(word_for_day(dia_atual)),
+        "max_attempts": MAX_ATTEMPTS,
+    }
 
 
 @app.post("/api/guess")
@@ -84,7 +89,9 @@ def guess(request: Request, payload: GuessRequest):
         )
         raise HTTPException(status_code=409, detail="dia desatualizado, recarregue a página")
 
-    if len(payload.guess) != WORD_LENGTH or not payload.guess.isalpha():
+    resposta = word_for_day(dia_atual)
+
+    if len(payload.guess) != len(resposta) or not payload.guess.isalpha():
         logger.warning("palpite inválido recebido: %r", payload.guess)
         raise HTTPException(status_code=422, detail="palpite inválido")
 
@@ -98,7 +105,6 @@ def guess(request: Request, payload: GuessRequest):
     tentativas_usadas += 1
     request.session[session_key] = tentativas_usadas
 
-    resposta = word_for_day(dia_atual)
     avaliacao = evaluate_guess(payload.guess, resposta)
     ganhou = is_win(avaliacao)
     acabou = ganhou or tentativas_usadas >= MAX_ATTEMPTS

@@ -7,7 +7,7 @@ import main
 from words import WORDS
 
 DIA_FIXO = 0
-PALAVRA_DO_DIA = WORDS[DIA_FIXO]  # "TURNO"
+PALAVRA_DO_DIA = WORDS[DIA_FIXO][0]  # "TURNO"
 
 
 @pytest.fixture
@@ -100,3 +100,48 @@ def test_rate_limit_bloqueia_excesso_de_requisicoes(client):
 
     resposta_extra = client.post("/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO})
     assert resposta_extra.status_code == 429
+
+
+PALAVRA_LONGA = "BLUELAGOON"  # 10 letras, não faz parte de WORDS -- só pra testar tamanho variável
+SEGMENTOS_PALAVRA_LONGA = (4, 6)  # "BLUE" + "LAGOON"
+
+
+@pytest.fixture
+def client_palavra_longa(monkeypatch):
+    monkeypatch.setattr(main, "today_index", lambda: DIA_FIXO)
+    monkeypatch.setattr(main, "word_for_day", lambda dia: PALAVRA_LONGA)
+    monkeypatch.setattr(main, "segments_for_day", lambda dia: SEGMENTOS_PALAVRA_LONGA)
+    main.limiter.reset()
+    return TestClient(main.app)
+
+
+def test_state_reflete_tamanho_da_palavra_do_dia(client_palavra_longa):
+    resposta = client_palavra_longa.get("/api/state")
+    assert resposta.json()["word_length"] == len(PALAVRA_LONGA)
+
+
+def test_pagina_inicial_reflete_tamanho_da_palavra_do_dia(client_palavra_longa):
+    resposta = client_palavra_longa.get("/")
+    assert f'data-word-length="{len(PALAVRA_LONGA)}"' in resposta.text
+
+
+def test_guess_do_tamanho_da_palavra_longa_e_aceito(client_palavra_longa):
+    resposta = client_palavra_longa.post(
+        "/api/guess", json={"guess": PALAVRA_LONGA, "day_index": DIA_FIXO}
+    )
+    assert resposta.status_code == 200
+    assert resposta.json()["is_win"] is True
+
+
+def test_guess_de_5_letras_e_rejeitado_quando_palavra_do_dia_tem_10(client_palavra_longa):
+    resposta = client_palavra_longa.post(
+        "/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO}
+    )
+    assert resposta.status_code == 422
+
+
+def test_pagina_inicial_marca_quebra_visual_no_limite_do_segmento(client_palavra_longa):
+    resposta = client_palavra_longa.get("/")
+    assert 'id="tile-0-4"' in resposta.text
+    assert 'class="tile tile--group-start" id="tile-0-4"' in resposta.text
+    assert 'class="tile tile--group-start" id="tile-0-3"' not in resposta.text

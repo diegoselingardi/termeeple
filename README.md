@@ -18,7 +18,8 @@ Um clone do Wordle com tema de jogos de tabuleiro, em português. Uma palavra no
 ## Como funciona
 
 - Cada dia tem um índice (`day_index`) calculado a partir de uma data de lançamento fixa.
-- A palavra do dia vem de uma lista fixa (`words.py`), ciclando pelo índice.
+- A palavra do dia vem de uma lista fixa (`words.py`), ciclando pelo índice. As palavras podem ter de 5 a 10 letras — o tabuleiro se ajusta ao tamanho da palavra do dia.
+- Parte da lista é curada a partir de nomes de jogos da [Ludopedia](https://ludopedia.com.br/), via `scripts/fetch_ludopedia_words.py` (rodado manualmente, de vez em quando).
 - O servidor guarda quantas tentativas cada sessão já usou hoje, o `attempt_number` nunca é aceito do cliente, só o servidor sabe a contagem real.
 
 ## Rodando localmente
@@ -66,6 +67,7 @@ static/                 # CSS, JS do jogo, service worker, ícones
 templates/               # HTML (Jinja2)
 test_*.py                 # testes automatizados
 scripts/manual_check.py    # script manual pra testar a API local (fora do pytest)
+scripts/fetch_ludopedia_words.py  # busca candidatos a palavra do dia na API da Ludopedia
 \`\`\`
 
 ## Créditos
