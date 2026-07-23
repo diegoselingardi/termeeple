@@ -187,15 +187,15 @@ def main():
         conhecido_o_suficiente = qt_tem is not None and qt_tem > QT_TEM_MIN
         if lancado_no_periodo and conhecido_o_suficiente:
             modo = modo_sugerido(palavra, segmentos)
-            encontrados.append((modo, ano, jogo["nm_jogo"], palavra, segmentos))
+            encontrados.append((modo, ano, jogo["nm_jogo"], palavra, segmentos, jogo["link"]))
 
     encontrados.sort()
     print(
         f"\n{len(encontrados)} jogos nacionais de {ANO_MIN}-{ANO_MAX}, "
         f"{TAM_MIN}-{TAM_MAX} letras, qt_tem > {QT_TEM_MIN}:\n"
     )
-    for modo, ano, nome_original, palavra, segmentos in encontrados:
-        print(f'[{modo}]  {ano}  {nome_original!r:40}  -> ("{palavra}", {segmentos!r}),')
+    for modo, ano, nome_original, palavra, segmentos, link in encontrados:
+        print(f'[{modo}]  {ano}  {nome_original!r:40}  -> ("{palavra}", {segmentos!r}, {link!r}),')
 
 
 if __name__ == "__main__":

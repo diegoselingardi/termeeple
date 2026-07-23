@@ -1,43 +1,46 @@
 import unicodedata
 from datetime import date
 
-# Cada entrada é (palavra_normalizada, tamanhos_dos_segmentos_originais).
+# Cada entrada é (palavra_normalizada, tamanhos_dos_segmentos_originais, link_da_ludopedia).
 # Os segmentos marcam onde havia espaço no nome original
-# (ex.: "Blue Lagoon" -> ("BLUELAGOON", (4, 6))), usados só pra desenhar
+# (ex.: "Blue Lagoon" -> ("BLUELAGOON", (4, 6), link)), usados só pra desenhar
 # uma quebra visual no tabuleiro -- o palpite continua sendo só as letras.
+# O link é None nas palavras genéricas (não correspondem a um jogo real da Ludopedia)
+# e só é preenchido nas palavras importadas via scripts/fetch_ludopedia_words.py --
+# mostrado ao jogador quando ele acerta.
 #
 # Três listas independentes, uma por modo de jogo (Padrão/Difícil/Composto) -- cada
 # modo cicla só pela sua própria lista, sem misturar palavras entre modos.
-WORDS_PADRAO: list[tuple[str, tuple[int, ...]]] = [
-    ("TURNO", (5,)),
-    ("DADOS", (5,)),
-    ("REGRA", (5,)),
-    ("CARTA", (5,)),
-    ("TORRE", (5,)),
-    ("BINGO", (5,)),
-    ("XEQUE", (5,)),
-    ("FICHA", (5,)),
-    ("RONDA", (5,)),
-    ("MOEDA", (5,)),
-    ("SORTE", (5,)),
-    ("DUELO", (5,)),
-    ("PEÇAS", (5,)),
-    ("GRUPO", (5,)),
-    ("TIMES", (5,)),
-    ("DAMAS", (5,)),
-    ("TROCA", (5,)),
-    ("ALVOS", (5,)),
-    ("TRUCO", (5,)),
-    ("MESAS", (5,)),
-    ("PONTO", (5,)),
-    ("LADOS", (5,)),
+WORDS_PADRAO: list[tuple[str, tuple[int, ...], str | None]] = [
+    ("TURNO", (5,), None),
+    ("DADOS", (5,), None),
+    ("REGRA", (5,), None),
+    ("CARTA", (5,), None),
+    ("TORRE", (5,), None),
+    ("BINGO", (5,), None),
+    ("XEQUE", (5,), None),
+    ("FICHA", (5,), None),
+    ("RONDA", (5,), None),
+    ("MOEDA", (5,), None),
+    ("SORTE", (5,), None),
+    ("DUELO", (5,), None),
+    ("PEÇAS", (5,), None),
+    ("GRUPO", (5,), None),
+    ("TIMES", (5,), None),
+    ("DAMAS", (5,), None),
+    ("TROCA", (5,), None),
+    ("ALVOS", (5,), None),
+    ("TRUCO", (5,), None),
+    ("MESAS", (5,), None),
+    ("PONTO", (5,), None),
+    ("LADOS", (5,), None),
 ]
 
 # 7-10 letras, sem espaço -- ainda sem curadoria (aguardando import da Ludopedia).
-WORDS_DIFICIL: list[tuple[str, tuple[int, ...]]] = []
+WORDS_DIFICIL: list[tuple[str, tuple[int, ...], str | None]] = []
 
 # 5-10 letras, só nomes que tinham espaço originalmente -- ainda sem curadoria.
-WORDS_COMPOSTO: list[tuple[str, tuple[int, ...]]] = []
+WORDS_COMPOSTO: list[tuple[str, tuple[int, ...], str | None]] = []
 
 LAUNCH_DATE = date(2026, 7, 7)
 
@@ -55,6 +58,11 @@ def word_for_day(day_index, palavras):
 def segments_for_day(day_index, palavras):
     palavra_index = day_index % len(palavras)
     return palavras[palavra_index][1]
+
+
+def link_for_day(day_index, palavras):
+    palavra_index = day_index % len(palavras)
+    return palavras[palavra_index][2]
 
 
 def segment_boundaries(segments):

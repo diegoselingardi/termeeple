@@ -16,6 +16,7 @@ from words import (
     WORDS_COMPOSTO,
     WORDS_DIFICIL,
     WORDS_PADRAO,
+    link_for_day,
     segment_boundaries,
     segments_for_day,
     today_index,
@@ -158,6 +159,7 @@ def registrar_modo(nome, config):
         ganhou = is_win(avaliacao)
         acabou = ganhou or tentativas_usadas >= max_attempts
         resposta_revelada = resposta if acabou else None
+        link_ludopedia = link_for_day(dia_atual, palavras) if ganhou else None
 
         logger.info(
             "palpite processado (modo=%s, dia=%s, tentativa=%s/%s, vitoria=%s, fim_de_jogo=%s)",
@@ -175,6 +177,7 @@ def registrar_modo(nome, config):
             "is_game_over": acabou,
             "revealed_word": resposta_revelada,
             "attempt_number": tentativas_usadas,
+            "ludopedia_link": link_ludopedia,
         }
 
     # Nomes únicos por modo -- o slowapi identifica cada rota limitada por

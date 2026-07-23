@@ -45,6 +45,8 @@ def test_acertar_a_palavra_termina_o_jogo_e_revela(client):
     assert corpo["is_win"] is True
     assert corpo["is_game_over"] is True
     assert corpo["revealed_word"] == PALAVRA_DO_DIA
+    # palavras genéricas (WORDS_PADRAO) não correspondem a um jogo real -- sem link
+    assert corpo["ludopedia_link"] is None
 
 
 def test_esgotar_tentativas_termina_o_jogo_e_revela(client):
@@ -150,7 +152,8 @@ def test_pagina_inicial_marca_quebra_visual_no_limite_do_segmento(client_palavra
 
 # ---- Modos (Difícil/Composto): rotas próprias, sessão isolada da do Padrão ----
 
-PALAVRA_TESTE_DIFICIL = ("TESTANDO", (8,))  # 8 letras, só usada durante o teste
+LINK_TESTE_DIFICIL = "https://ludopedia.com.br/jogo/testando"
+PALAVRA_TESTE_DIFICIL = ("TESTANDO", (8,), LINK_TESTE_DIFICIL)  # 8 letras, só pro teste
 
 
 @pytest.fixture
@@ -180,6 +183,19 @@ def test_tentativas_nao_vazam_entre_modos(client_dois_modos):
     )
     assert resposta_dificil.status_code == 200
     assert resposta_dificil.json()["attempt_number"] == 1
+
+
+def test_ludopedia_link_aparece_so_quando_acerta(client_dois_modos):
+    resposta_errada = client_dois_modos.post(
+        "/api/dificil/guess", json={"guess": "PERDENDO", "day_index": DIA_FIXO}
+    )
+    assert resposta_errada.json()["ludopedia_link"] is None
+
+    resposta_certa = client_dois_modos.post(
+        "/api/dificil/guess", json={"guess": PALAVRA_TESTE_DIFICIL[0], "day_index": DIA_FIXO}
+    )
+    assert resposta_certa.json()["is_win"] is True
+    assert resposta_certa.json()["ludopedia_link"] == LINK_TESTE_DIFICIL
 
 
 def test_modo_sem_palavras_cadastradas_mostra_aviso_na_pagina():

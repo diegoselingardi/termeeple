@@ -2,6 +2,7 @@ from words import (
     WORDS_COMPOSTO,
     WORDS_DIFICIL,
     WORDS_PADRAO,
+    link_for_day,
     normalize_title,
     segment_boundaries,
     segments_for_day,
@@ -18,24 +19,28 @@ def test_ciclo_volta_ao_comeco():
 
 
 def test_palavras_padrao_tem_5_ou_6_letras():
-    assert all(5 <= len(palavra) <= 6 for palavra, _ in WORDS_PADRAO)
+    assert all(5 <= len(palavra) <= 6 for palavra, _, _ in WORDS_PADRAO)
 
 
 def test_palavras_dificil_tem_7_a_10_letras():
-    assert all(7 <= len(palavra) <= 10 for palavra, _ in WORDS_DIFICIL)
+    assert all(7 <= len(palavra) <= 10 for palavra, _, _ in WORDS_DIFICIL)
 
 
 def test_palavras_composto_tem_mais_de_um_segmento():
-    assert all(len(segmentos) > 1 for _, segmentos in WORDS_COMPOSTO)
+    assert all(len(segmentos) > 1 for _, segmentos, _ in WORDS_COMPOSTO)
 
 
 def test_segmentos_somam_o_tamanho_da_palavra():
     todas = (*WORDS_PADRAO, *WORDS_DIFICIL, *WORDS_COMPOSTO)
-    assert all(sum(segmentos) == len(palavra) for palavra, segmentos in todas)
+    assert all(sum(segmentos) == len(palavra) for palavra, segmentos, _ in todas)
 
 
 def test_segments_for_day_bate_com_word_for_day():
     assert sum(segments_for_day(0, WORDS_PADRAO)) == len(word_for_day(0, WORDS_PADRAO))
+
+
+def test_link_for_day_e_none_nas_palavras_genericas():
+    assert link_for_day(0, WORDS_PADRAO) is None
 
 
 def test_normalize_title_remove_espaco_e_deixa_maiusculo():

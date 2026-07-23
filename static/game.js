@@ -79,6 +79,7 @@ function submitGuess() {
 
                 if (gameOver) {
                     recordResult(data.is_win, currentRow + 1, dayIndex, MODO);
+                    updateLudopediaLink(data.ludopedia_link);
                     showStatsPanel();
                 }
 
@@ -149,6 +150,17 @@ function showStatsPanel() {
     renderStats(MODO);
     document.getElementById("statsPanel").classList.remove("hidden");
     document.getElementById("backdrop").classList.remove("hidden");
+}
+
+function updateLudopediaLink(link) {
+    const elemento = document.getElementById("ludopediaLink");
+    if (link) {
+        elemento.innerHTML = `Sobre esse jogo: <a href="${link}" target="_blank" rel="noopener">ver na Ludopedia</a>`;
+        elemento.classList.remove("hidden");
+    } else {
+        elemento.innerHTML = "";
+        elemento.classList.add("hidden");
+    }
 }
 
 function typeLetter(letter) {
