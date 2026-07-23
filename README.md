@@ -1,6 +1,6 @@
 # Termeeple
 
-Um clone do Wordle com tema de jogos de tabuleiro, em português. Uma palavra nova por dia, todo mundo joga a mesma.
+Um clone do Wordle com tema de jogos de tabuleiro, em português. Uma palavra nova por dia, todo mundo joga a mesma — em cada um dos três modos independentes (Padrão, Difícil, Composto).
 
 🔗 Jogue em: [termeeple.onrender.com](https://termeeple.onrender.com)
 
@@ -18,8 +18,12 @@ Um clone do Wordle com tema de jogos de tabuleiro, em português. Uma palavra no
 ## Como funciona
 
 - Cada dia tem um índice (`day_index`) calculado a partir de uma data de lançamento fixa.
-- A palavra do dia vem de uma lista fixa (`words.py`), ciclando pelo índice. As palavras podem ter de 5 a 10 letras — o tabuleiro se ajusta ao tamanho da palavra do dia.
-- Parte da lista é curada a partir de nomes de jogos da [Ludopedia](https://ludopedia.com.br/), via `scripts/fetch_ludopedia_words.py` (rodado manualmente, de vez em quando).
+- Três modos de jogo independentes, cada um com sua própria lista de palavras, tabuleiro, sessão de tentativas e estatísticas (não se misturam):
+  - **Padrão** (`/`) — palavras de 5-6 letras, 6 tentativas.
+  - **Difícil** (`/dificil`) — palavras de 7-10 letras, 7 tentativas.
+  - **Composto** (`/composto`) — nomes de jogos com espaço (ex.: "Blue Lagoon" → `BLUELAGOON`), 8 tentativas.
+- A palavra de cada modo vem de uma lista fixa (`words.py`), ciclando pelo índice. Parte é curada a partir de nomes de jogos da [Ludopedia](https://ludopedia.com.br/), via `scripts/fetch_ludopedia_words.py` (rodado manualmente, de vez em quando) — quando a palavra vem de lá, acertar mostra um link pra ficha do jogo.
+- É possível reservar uma palavra pra uma data específica (`SPONSORED_WORDS` em `words.py`, só no modo Padrão) — usado pra patrocínio pontual, sem nenhuma indicação visual na interface.
 - O servidor guarda quantas tentativas cada sessão já usou hoje, o `attempt_number` nunca é aceito do cliente, só o servidor sabe a contagem real.
 
 ## Rodando localmente
