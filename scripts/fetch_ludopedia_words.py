@@ -119,6 +119,14 @@ def detalhes_do_jogo(token, id_jogo):
     return detalhe.get("ano_nacional"), detalhe.get("qt_tem")
 
 
+def link_absoluto(link):
+    """A API devolve o link do jogo como caminho relativo (ex.: "jogo/nome-do-jogo"),
+    apesar do exemplo na documentação mostrar URL completa -- normaliza aqui."""
+    if link.startswith("http"):
+        return link
+    return f"https://ludopedia.com.br/{link}"
+
+
 def modo_sugerido(palavra, segmentos):
     """Sugere em qual lista (WORDS_PADRAO/DIFICIL/COMPOSTO) o candidato se encaixa."""
     if len(segmentos) > 1:
@@ -187,7 +195,8 @@ def main():
         conhecido_o_suficiente = qt_tem is not None and qt_tem > QT_TEM_MIN
         if lancado_no_periodo and conhecido_o_suficiente:
             modo = modo_sugerido(palavra, segmentos)
-            encontrados.append((modo, ano, jogo["nm_jogo"], palavra, segmentos, jogo["link"]))
+            link = link_absoluto(jogo["link"])
+            encontrados.append((modo, ano, jogo["nm_jogo"], palavra, segmentos, link))
 
     encontrados.sort()
     print(
