@@ -1,6 +1,8 @@
-"""Busca candidatos a palavra do dia na API da Ludopedia (jogos base, 2020-2024, nome de 5-10
-letras depois de normalizado). Não escreve em words.py -- só imprime uma lista pra você revisar
-e colar manualmente as entradas que quiser em WORDS.
+"""Busca candidatos a palavra do dia na API da Ludopedia: jogos base lançados no Brasil entre
+2020-2026 (ano_nacional), com qt_tem acima de um mínimo (sinal de que é um jogo conhecido, não
+só um cadastro isolado), nome sem ":", "&" ou número, e de 5-10 letras depois de normalizado.
+Não escreve em words.py -- só imprime uma lista pra você revisar e colar manualmente as
+entradas que quiser em WORDS.
 
 Uso:
     export LUDOPEDIA_ACCESS_TOKEN=seu_token
@@ -22,9 +24,11 @@ import requests
 
 API_BASE = "https://ludopedia.com.br/api/v1"
 ANO_MIN = 2020
-ANO_MAX = 2024
+ANO_MAX = 2026
 TAM_MIN = 5
 TAM_MAX = 10
+QT_TEM_MIN = 10  # só entram jogos que mais de 10 pessoas têm na coleção (sinal de jogo conhecido)
+CARACTERES_PROIBIDOS = ":&"  # nome do jogo não pode ter nenhum desses caracteres
 TP_JOGO = "b"  # só jogos base, sem expansão
 ROWS_POR_PAGINA = 100
 PAUSA_ENTRE_CHAMADAS = 1.0  # segundos entre chamadas -- API está em ALPHA, sem limite documentado
@@ -39,8 +43,10 @@ _estado_backoff = {"espera": PAUSA_ENTRE_CHAMADAS}
 
 def carregar_cache():
     if CACHE_PATH.exists():
-        return json.loads(CACHE_PATH.read_text(encoding="utf-8"))
-    return {"jogos": None, "anos": {}}
+        cache = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
+        cache.setdefault("detalhes", {})
+        return cache
+    return {"jogos": None, "detalhes": {}}
 
 
 def salvar_cache(cache):
@@ -97,11 +103,19 @@ def listar_jogos(token):
     return jogos
 
 
-def ano_do_jogo(token, id_jogo):
-    """Busca o detalhe do jogo e devolve o ano nacional (preferido) ou o de publicação."""
+def nome_aceitavel(nome):
+    """Rejeita nomes com número ou com ':'/'&' -- normalmente indicam edição/subtítulo
+    (ex.: "18DO: Dortmund", "7 Wonders") que geram palavras com fragmentos estranhos."""
+    if any(letra.isdigit() for letra in nome):
+        return False
+    return not any(caractere in nome for caractere in CARACTERES_PROIBIDOS)
+
+
+def detalhes_do_jogo(token, id_jogo):
+    """Busca a ficha do jogo e devolve (ano_nacional, qt_tem)."""
     resposta = get_com_retry(f"{API_BASE}/jogos/{id_jogo}", headers=cabecalho(token))
     detalhe = resposta.json()
-    return detalhe.get("ano_nacional") or detalhe.get("ano_publicacao")
+    return detalhe.get("ano_nacional"), detalhe.get("qt_tem")
 
 
 def main():
@@ -131,6 +145,8 @@ def main():
     ja_usadas = {palavra for palavra, _ in WORDS}
     candidatos_por_tamanho = {}
     for jogo in jogos:
+        if not nome_aceitavel(jogo["nm_jogo"]):
+            continue
         palavra, segmentos = normalize_title(jogo["nm_jogo"])
         if not (TAM_MIN <= len(palavra) <= TAM_MAX):
             continue
@@ -143,25 +159,30 @@ def main():
         f"{len(candidatos_por_tamanho)} candidatos após filtrar tamanho e duplicatas.",
         file=sys.stderr,
     )
-    print("Consultando ano de lançamento de cada candidato...", file=sys.stderr)
+    print("Consultando ano nacional e qt_tem de cada candidato...", file=sys.stderr)
 
     encontrados = []
     total_candidatos = len(candidatos_por_tamanho)
     for indice, (palavra, (jogo, segmentos)) in enumerate(candidatos_por_tamanho.items(), start=1):
         id_jogo_str = str(jogo["id_jogo"])
-        if id_jogo_str in cache["anos"]:
-            ano = cache["anos"][id_jogo_str]
+        if id_jogo_str in cache["detalhes"]:
+            ano, qt_tem = cache["detalhes"][id_jogo_str]
         else:
-            ano = ano_do_jogo(token, jogo["id_jogo"])
-            cache["anos"][id_jogo_str] = ano
+            ano, qt_tem = detalhes_do_jogo(token, jogo["id_jogo"])
+            cache["detalhes"][id_jogo_str] = [ano, qt_tem]
             salvar_cache(cache)
         if indice % 20 == 0 or indice == total_candidatos:
             print(f"  {indice}/{total_candidatos} candidatos consultados", file=sys.stderr)
-        if ano is not None and ANO_MIN <= ano <= ANO_MAX:
+        lancado_no_periodo = ano is not None and ANO_MIN <= ano <= ANO_MAX
+        conhecido_o_suficiente = qt_tem is not None and qt_tem > QT_TEM_MIN
+        if lancado_no_periodo and conhecido_o_suficiente:
             encontrados.append((ano, jogo["nm_jogo"], palavra, segmentos))
 
     encontrados.sort()
-    print(f"\n{len(encontrados)} jogos de {ANO_MIN}-{ANO_MAX} com {TAM_MIN}-{TAM_MAX} letras:\n")
+    print(
+        f"\n{len(encontrados)} jogos nacionais de {ANO_MIN}-{ANO_MAX}, "
+        f"{TAM_MIN}-{TAM_MAX} letras, qt_tem > {QT_TEM_MIN}:\n"
+    )
     for ano, nome_original, palavra, segmentos in encontrados:
         print(f'{ano}  {nome_original!r:40}  -> ("{palavra}", {segmentos!r}),')
 
