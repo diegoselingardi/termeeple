@@ -59,10 +59,22 @@ def cabecalho(token):
 
 
 def get_com_retry(url, headers=None, params=None):
-    """GET com retry/backoff pra 429 (Too Many Requests) -- a API não documenta o limite
-    de taxa, então respeita o Retry-After se vier (e for numérico), ou dobra a espera."""
+    """GET com retry/backoff pra 429 (Too Many Requests) e pra falhas de rede/conexão --
+    a API não documenta o limite de taxa, então respeita o Retry-After se vier (e for
+    numérico), ou dobra a espera. Instabilidade de rede (timeout, conexão recusada etc.)
+    também escala a espera em vez de derrubar o script inteiro."""
     while True:
-        resposta = requests.get(url, headers=headers, params=params)
+        try:
+            resposta = requests.get(url, headers=headers, params=params, timeout=30)
+        except requests.exceptions.RequestException as erro:
+            espera = min(_estado_backoff["espera"] * 2, ESPERA_MAXIMA_RETRY)
+            _estado_backoff["espera"] = espera
+            print(
+                f"Erro de rede ({erro.__class__.__name__}), aguardando {espera:.0f}s...",
+                file=sys.stderr,
+            )
+            time.sleep(espera)
+            continue
         if resposta.status_code == 429:
             retry_after = resposta.headers.get("Retry-After")
             try:
