@@ -19,7 +19,15 @@
     <button id="helpBtn" class="hud__icon-btn" aria-label="Como jogar">?</button>
     <button id="statsBtn" class="hud__icon-btn" aria-label="Progresso">📊</button>
     <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
-    <button id="shareAppBtn" class="hud__icon-btn" aria-label="Compartilhar">✈️</button>
+    <button id="shareAppBtn" class="hud__icon-btn" aria-label="Compartilhar">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"></line>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"></line>
+      </svg>
+    </button>
   </div>
 
     <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" data-modo="{{ modo }}" data-titulo="{{ titulo }}" style="--cols: {{ word_length }}">
@@ -114,6 +122,8 @@
       </div>
     </div>
     {% endif %}
+
+    <p class="setting-row__desc">Todos os nomes de jogos foram extraídos de <a href="https://ludopedia.com.br" target="_blank">ludopedia.com.br</a></p>
 
     <div class="settings-social">
       <p class="settings-social__title">Siga o Canal do Tio Di</p>
