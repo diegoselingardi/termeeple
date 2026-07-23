@@ -7,8 +7,10 @@ let gameOver = false;
 const board = document.getElementById("board");
 const WORD_LENGTH = parseInt(board.dataset.wordLength);
 const MAX_ATTEMPTS = parseInt(board.dataset.maxAttempts);
+const MODO = board.dataset.modo || "padrao";
+const API_PREFIX = MODO === "padrao" ? "" : `/${MODO}`;
 
-fetch("/api/state")
+fetch(`/api${API_PREFIX}/state`)
     .then((response) => response.json())
     .then((data) => {
         dayIndex = data.day_index;
@@ -51,7 +53,7 @@ function submitGuess() {
             guess += getTile(currentRow, i).textContent;
         }
 
-        fetch("/api/guess", {
+        fetch(`/api${API_PREFIX}/guess`, {
             method: "POST",
             headers: {
             "Content-Type": "application/json"
@@ -76,7 +78,8 @@ function submitGuess() {
                 gameOver = data.is_game_over;
 
                 if (gameOver) {
-                    recordResult(data.is_win, currentRow + 1, dayIndex);
+                    recordResult(data.is_win, currentRow + 1, dayIndex, MODO);
+                    updateLudopediaLink(data.ludopedia_link);
                     showStatsPanel();
                 }
 
@@ -92,7 +95,7 @@ function isModalOpen() {
 }
 
 function boardStorageKey(day) {
-    return `termeeple:board:${day}`;
+    return `termeeple:board:${MODO}:${day}`;
 }
 
 function saveBoardState() {
@@ -144,9 +147,20 @@ function restoreBoardState() {
 }
 
 function showStatsPanel() {
-    renderStats();
+    renderStats(MODO);
     document.getElementById("statsPanel").classList.remove("hidden");
     document.getElementById("backdrop").classList.remove("hidden");
+}
+
+function updateLudopediaLink(link) {
+    const elemento = document.getElementById("ludopediaLink");
+    if (link) {
+        elemento.innerHTML = `Sobre esse jogo: <a href="${link}" target="_blank" rel="noopener">ver na Ludopedia</a>`;
+        elemento.classList.remove("hidden");
+    } else {
+        elemento.innerHTML = "";
+        elemento.classList.add("hidden");
+    }
 }
 
 function typeLetter(letter) {
@@ -242,6 +256,24 @@ document.getElementById("backdrop").addEventListener("click", () => {
 document.getElementById("colorblindToggle").addEventListener("change", (event) => {
     document.body.classList.toggle("colorblind", event.target.checked);
 });
+
+function shareApp() {
+    const titulo = board.dataset.titulo || "Termeeple";
+    const dados = {
+        title: titulo,
+        text: `Vem jogar ${titulo} comigo -- o Wordle de jogos de tabuleiro!`,
+        url: window.location.origin,
+    };
+    if (navigator.share) {
+        navigator.share(dados).catch(() => {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(`${dados.text} ${dados.url}`).catch(() => {});
+    }
+}
+
+document.getElementById("shareAppBtn").addEventListener("click", shareApp);
+
+document.getElementById("shareStatsBtn").addEventListener("click", () => shareStats(MODO));
 
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/static/sw.js")        

@@ -3,3 +3,5 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .env
+scripts/.ludopedia_cache.json
+scripts/candidatos_ludopedia.txt

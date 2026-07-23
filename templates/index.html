@@ -6,26 +6,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#16332A">
   <meta charset="UTF-8">
-  <title>Termeeple</title>
+  <title>{{ titulo }}</title>
 </head>
 <body>
   <div class="table">
     <header class="box-label">
       <h1 class="box-label__title">TERM<span class="meeple">●</span>EEPLE</h1>
-      <p class="box-label__subtitle">Uma versão baseada em Wordle para quem joga tabuleiro</p>
+      <p class="box-label__subtitle">{{ descricao }}</p>
     </header>
 
   <div class="hud">
     <button id="helpBtn" class="hud__icon-btn" aria-label="Como jogar">?</button>
     <button id="statsBtn" class="hud__icon-btn" aria-label="Progresso">📊</button>
     <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
+    <button id="shareAppBtn" class="hud__icon-btn" aria-label="Compartilhar">📤</button>
   </div>
 
-    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}">    
+    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" data-modo="{{ modo }}" data-titulo="{{ titulo }}" style="--cols: {{ word_length }}">
       {% for linha in range(max_attempts) %}
         <div class="board-row">
           {% for coluna in range(word_length) %}
-            <div class="tile" id="tile-{{ linha }}-{{ coluna }}"></div>
+            <div class="tile{% if coluna in segment_boundaries %} tile--group-start{% endif %}" id="tile-{{ linha }}-{{ coluna }}"></div>
           {% endfor %}
         </div>
       {% endfor %}
@@ -47,8 +48,8 @@
   <div id="helpPanel" class="help-panel hidden">
     <h2>Como jogar</h2>
     <ul>
-      <li>Adivinhe a palavra de 5 letras sobre o mundo dos jogos de tabuleiro.</li>
-      <li>Você tem 6 tentativas. Cada uma precisa ter 5 letras.</li>
+      <li>Adivinhe o nome de um jogo de tabuleiro. Cada dia tem uma palavra de um tamanho diferente, de 5 a 10 letras.</li>
+      <li>Você tem 6 tentativas. Cada uma precisa ter o mesmo tamanho da palavra do dia.</li>
     </ul>
 
     <div class="example">
@@ -103,6 +104,17 @@
       </label>
     </div>
 
+    {% if outros_modos %}
+    <div class="settings-social">
+      <p class="settings-social__title">Outros modos</p>
+      <div class="settings-social__links">
+        {% for nome_modo, titulo_modo, url_modo in outros_modos %}
+          <a href="{{ url_modo }}" class="btn btn--outline">{{ titulo_modo }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <div class="settings-social">
       <p class="settings-social__title">Siga o Canal do Tio Di</p>
       <div class="settings-social__links">
@@ -138,6 +150,8 @@
     </div>
     <h3>Distribuição de tentativas</h3>
     <div id="distList" class="dist-list"></div>
+    <p id="ludopediaLink" class="hidden"></p>
+    <button id="shareStatsBtn" class="btn btn--outline">Compartilhar estatísticas</button>
     <button id="closeStats" class="btn">Fechar</button>
   </div>
 

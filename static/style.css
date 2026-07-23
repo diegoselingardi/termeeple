@@ -38,15 +38,19 @@ body {
   flex-direction: column;
   gap: 6px;
   width: 100%;
-  max-width: 280px;
+  max-width: calc(var(--cols, 5) * 56px);
   margin: 0;
   align-self: center;
 }
 
 .board-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* fixo em 5 por enquanto -- vira variável no Módulo 6 */
+  grid-template-columns: repeat(var(--cols, 5), 1fr);
   gap: 5px;
+}
+
+.tile--group-start {
+  margin-left: 10px; /* separa visualmente os "pedaços" de um nome com espaço, ex.: BLUE | LAGOON */
 }
 
 .tile {
