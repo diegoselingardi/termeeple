@@ -257,6 +257,24 @@ document.getElementById("colorblindToggle").addEventListener("change", (event) =
     document.body.classList.toggle("colorblind", event.target.checked);
 });
 
+function shareApp() {
+    const titulo = board.dataset.titulo || "Termeeple";
+    const dados = {
+        title: titulo,
+        text: `Vem jogar ${titulo} comigo -- o Wordle de jogos de tabuleiro!`,
+        url: window.location.origin,
+    };
+    if (navigator.share) {
+        navigator.share(dados).catch(() => {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(`${dados.text} ${dados.url}`).catch(() => {});
+    }
+}
+
+document.getElementById("shareAppBtn").addEventListener("click", shareApp);
+
+document.getElementById("shareStatsBtn").addEventListener("click", () => shareStats(MODO));
+
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/static/sw.js")        
 }

@@ -19,9 +19,10 @@
     <button id="helpBtn" class="hud__icon-btn" aria-label="Como jogar">?</button>
     <button id="statsBtn" class="hud__icon-btn" aria-label="Progresso">📊</button>
     <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
+    <button id="shareAppBtn" class="hud__icon-btn" aria-label="Compartilhar">📤</button>
   </div>
 
-    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" data-modo="{{ modo }}" style="--cols: {{ word_length }}">
+    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" data-modo="{{ modo }}" data-titulo="{{ titulo }}" style="--cols: {{ word_length }}">
       {% for linha in range(max_attempts) %}
         <div class="board-row">
           {% for coluna in range(word_length) %}
@@ -150,6 +151,7 @@
     <h3>Distribuição de tentativas</h3>
     <div id="distList" class="dist-list"></div>
     <p id="ludopediaLink" class="hidden"></p>
+    <button id="shareStatsBtn" class="btn btn--outline">Compartilhar estatísticas</button>
     <button id="closeStats" class="btn">Fechar</button>
   </div>
 

@@ -84,3 +84,22 @@ function renderStats(modo) {
         distList.appendChild(row);
     });
 }
+
+function shareStats(modo) {
+    const stats = loadStats(modo);
+    const winRate = stats.gamesPlayed > 0 ? Math.round((stats.wins / stats.gamesPlayed) * 100) : 0;
+    const titulo = document.getElementById("board").dataset.titulo || "Termeeple";
+    const distribuicao = stats.distribution.map((count, i) => `${i + 1}: ${count}`).join("\n");
+
+    const texto =
+        `${titulo} -- minhas estatísticas\n` +
+        `🎮 ${stats.gamesPlayed} jogos | ✅ ${winRate}% de vitórias\n` +
+        `🔥 Sequência atual: ${stats.currentStreak} | 🏆 Melhor sequência: ${stats.maxStreak}\n\n` +
+        `Distribuição de tentativas:\n${distribuicao}`;
+
+    if (navigator.share) {
+        navigator.share({ title: `${titulo} -- minhas estatísticas`, text: texto }).catch(() => {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(texto).catch(() => {});
+    }
+}
