@@ -4,10 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 import main
-from words import WORDS
+from words import WORDS_PADRAO
 
 DIA_FIXO = 0
-PALAVRA_DO_DIA = WORDS[DIA_FIXO][0]  # "TURNO"
+PALAVRA_DO_DIA = WORDS_PADRAO[DIA_FIXO][0]  # "TURNO"
+MAX_ATTEMPTS_PADRAO = main.MODOS["padrao"]["max_attempts"]
 
 
 @pytest.fixture
@@ -47,17 +48,17 @@ def test_acertar_a_palavra_termina_o_jogo_e_revela(client):
 
 
 def test_esgotar_tentativas_termina_o_jogo_e_revela(client):
-    for _ in range(main.MAX_ATTEMPTS):
+    for _ in range(MAX_ATTEMPTS_PADRAO):
         resposta = client.post("/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO})
 
     corpo = resposta.json()
     assert corpo["is_game_over"] is True
     assert corpo["revealed_word"] == PALAVRA_DO_DIA
-    assert corpo["attempt_number"] == main.MAX_ATTEMPTS
+    assert corpo["attempt_number"] == MAX_ATTEMPTS_PADRAO
 
 
 def test_tentativa_alem_do_limite_e_bloqueada(client):
-    for _ in range(main.MAX_ATTEMPTS):
+    for _ in range(MAX_ATTEMPTS_PADRAO):
         client.post("/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO})
 
     resposta_extra = client.post("/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO})
@@ -84,7 +85,7 @@ def test_sessoes_diferentes_nao_compartilham_tentativas(monkeypatch):
     cliente_a = TestClient(main.app)
     cliente_b = TestClient(main.app)
 
-    for _ in range(main.MAX_ATTEMPTS):
+    for _ in range(MAX_ATTEMPTS_PADRAO):
         cliente_a.post("/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO})
 
     # cliente_a já esgotou; cliente_b, com cookies próprios, deve começar do zero
@@ -102,15 +103,15 @@ def test_rate_limit_bloqueia_excesso_de_requisicoes(client):
     assert resposta_extra.status_code == 429
 
 
-PALAVRA_LONGA = "BLUELAGOON"  # 10 letras, não faz parte de WORDS -- só pra testar tamanho variável
+PALAVRA_LONGA = "BLUELAGOON"  # 10 letras, não faz parte de WORDS_PADRAO -- só pra testar tamanho
 SEGMENTOS_PALAVRA_LONGA = (4, 6)  # "BLUE" + "LAGOON"
 
 
 @pytest.fixture
 def client_palavra_longa(monkeypatch):
     monkeypatch.setattr(main, "today_index", lambda: DIA_FIXO)
-    monkeypatch.setattr(main, "word_for_day", lambda dia: PALAVRA_LONGA)
-    monkeypatch.setattr(main, "segments_for_day", lambda dia: SEGMENTOS_PALAVRA_LONGA)
+    monkeypatch.setattr(main, "word_for_day", lambda dia, palavras: PALAVRA_LONGA)
+    monkeypatch.setattr(main, "segments_for_day", lambda dia, palavras: SEGMENTOS_PALAVRA_LONGA)
     main.limiter.reset()
     return TestClient(main.app)
 
@@ -145,3 +146,51 @@ def test_pagina_inicial_marca_quebra_visual_no_limite_do_segmento(client_palavra
     assert 'id="tile-0-4"' in resposta.text
     assert 'class="tile tile--group-start" id="tile-0-4"' in resposta.text
     assert 'class="tile tile--group-start" id="tile-0-3"' not in resposta.text
+
+
+# ---- Modos (Difícil/Composto): rotas próprias, sessão isolada da do Padrão ----
+
+PALAVRA_TESTE_DIFICIL = ("TESTANDO", (8,))  # 8 letras, só usada durante o teste
+
+
+@pytest.fixture
+def client_dois_modos(monkeypatch):
+    monkeypatch.setattr(main, "today_index", lambda: DIA_FIXO)
+    main.limiter.reset()
+    main.MODOS["dificil"]["palavras"].append(PALAVRA_TESTE_DIFICIL)
+    try:
+        yield TestClient(main.app)
+    finally:
+        main.MODOS["dificil"]["palavras"].remove(PALAVRA_TESTE_DIFICIL)
+
+
+def test_modo_dificil_state_reflete_sua_propria_palavra(client_dois_modos):
+    resposta = client_dois_modos.get("/api/dificil/state")
+    assert resposta.status_code == 200
+    assert resposta.json()["word_length"] == len(PALAVRA_TESTE_DIFICIL[0])
+
+
+def test_tentativas_nao_vazam_entre_modos(client_dois_modos):
+    for _ in range(MAX_ATTEMPTS_PADRAO):
+        client_dois_modos.post("/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO})
+
+    # esgotou as tentativas do Padrão; Difícil, mesmo dia e mesma sessão, começa do zero
+    resposta_dificil = client_dois_modos.post(
+        "/api/dificil/guess", json={"guess": PALAVRA_TESTE_DIFICIL[0], "day_index": DIA_FIXO}
+    )
+    assert resposta_dificil.status_code == 200
+    assert resposta_dificil.json()["attempt_number"] == 1
+
+
+def test_modo_sem_palavras_cadastradas_mostra_aviso_na_pagina():
+    cliente = TestClient(main.app)
+    resposta = cliente.get("/composto")
+    assert resposta.status_code == 200
+    assert "ainda não tem palavras cadastradas" in resposta.text
+
+
+def test_modo_sem_palavras_cadastradas_bloqueia_api():
+    cliente = TestClient(main.app)
+    assert cliente.get("/api/composto/state").status_code == 503
+    resposta = cliente.post("/api/composto/guess", json={"guess": "TESTE", "day_index": 0})
+    assert resposta.status_code == 503

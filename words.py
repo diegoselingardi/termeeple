@@ -5,7 +5,10 @@ from datetime import date
 # Os segmentos marcam onde havia espaço no nome original
 # (ex.: "Blue Lagoon" -> ("BLUELAGOON", (4, 6))), usados só pra desenhar
 # uma quebra visual no tabuleiro -- o palpite continua sendo só as letras.
-WORDS: list[tuple[str, tuple[int, ...]]] = [
+#
+# Três listas independentes, uma por modo de jogo (Padrão/Difícil/Composto) -- cada
+# modo cicla só pela sua própria lista, sem misturar palavras entre modos.
+WORDS_PADRAO: list[tuple[str, tuple[int, ...]]] = [
     ("TURNO", (5,)),
     ("DADOS", (5,)),
     ("REGRA", (5,)),
@@ -30,6 +33,12 @@ WORDS: list[tuple[str, tuple[int, ...]]] = [
     ("LADOS", (5,)),
 ]
 
+# 7-10 letras, sem espaço -- ainda sem curadoria (aguardando import da Ludopedia).
+WORDS_DIFICIL: list[tuple[str, tuple[int, ...]]] = []
+
+# 5-10 letras, só nomes que tinham espaço originalmente -- ainda sem curadoria.
+WORDS_COMPOSTO: list[tuple[str, tuple[int, ...]]] = []
+
 LAUNCH_DATE = date(2026, 7, 7)
 
 
@@ -38,14 +47,14 @@ def today_index():
     return data_atual.days
 
 
-def word_for_day(day_index):
-    palavra_index = day_index % len(WORDS)
-    return WORDS[palavra_index][0]
+def word_for_day(day_index, palavras):
+    palavra_index = day_index % len(palavras)
+    return palavras[palavra_index][0]
 
 
-def segments_for_day(day_index):
-    palavra_index = day_index % len(WORDS)
-    return WORDS[palavra_index][1]
+def segments_for_day(day_index, palavras):
+    palavra_index = day_index % len(palavras)
+    return palavras[palavra_index][1]
 
 
 def segment_boundaries(segments):

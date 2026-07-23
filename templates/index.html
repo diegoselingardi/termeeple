@@ -6,13 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#16332A">
   <meta charset="UTF-8">
-  <title>Termeeple</title>
+  <title>{{ titulo }}</title>
 </head>
 <body>
   <div class="table">
     <header class="box-label">
       <h1 class="box-label__title">TERM<span class="meeple">●</span>EEPLE</h1>
-      <p class="box-label__subtitle">Uma versão baseada em Wordle para quem joga tabuleiro</p>
+      <p class="box-label__subtitle">{{ descricao }}</p>
     </header>
 
   <div class="hud">
@@ -21,7 +21,7 @@
     <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
   </div>
 
-    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" style="--cols: {{ word_length }}">
+    <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" data-modo="{{ modo }}" style="--cols: {{ word_length }}">
       {% for linha in range(max_attempts) %}
         <div class="board-row">
           {% for coluna in range(word_length) %}
@@ -102,6 +102,17 @@
         <span class="switch__slider"></span>
       </label>
     </div>
+
+    {% if outros_modos %}
+    <div class="settings-social">
+      <p class="settings-social__title">Outros modos</p>
+      <div class="settings-social__links">
+        {% for nome_modo, titulo_modo, url_modo in outros_modos %}
+          <a href="{{ url_modo }}" class="btn btn--outline">{{ titulo_modo }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     <div class="settings-social">
       <p class="settings-social__title">Siga o Canal do Tio Di</p>

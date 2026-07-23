@@ -2,7 +2,8 @@
 2020-2026 (ano_nacional), com qt_tem acima de um mínimo (sinal de que é um jogo conhecido, não
 só um cadastro isolado), nome sem ":", "&" ou número, e de 5-10 letras depois de normalizado.
 Não escreve em words.py -- só imprime uma lista pra você revisar e colar manualmente as
-entradas que quiser em WORDS.
+entradas que quiser em WORDS_PADRAO, WORDS_DIFICIL ou WORDS_COMPOSTO (o script já sugere
+o modo de cada candidato, com base no tamanho e nos segmentos).
 
 Uso:
     export LUDOPEDIA_ACCESS_TOKEN=seu_token
@@ -118,9 +119,18 @@ def detalhes_do_jogo(token, id_jogo):
     return detalhe.get("ano_nacional"), detalhe.get("qt_tem")
 
 
+def modo_sugerido(palavra, segmentos):
+    """Sugere em qual lista (WORDS_PADRAO/DIFICIL/COMPOSTO) o candidato se encaixa."""
+    if len(segmentos) > 1:
+        return "composto"
+    if len(palavra) <= 6:
+        return "padrao"
+    return "dificil"
+
+
 def main():
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from words import WORDS, normalize_title
+    from words import WORDS_COMPOSTO, WORDS_DIFICIL, WORDS_PADRAO, normalize_title
 
     token = os.environ.get("LUDOPEDIA_ACCESS_TOKEN")
     if not token:
@@ -142,7 +152,7 @@ def main():
         salvar_cache(cache)
         print(f"{len(jogos)} jogos base encontrados no catálogo.", file=sys.stderr)
 
-    ja_usadas = {palavra for palavra, _ in WORDS}
+    ja_usadas = {palavra for palavra, _ in (*WORDS_PADRAO, *WORDS_DIFICIL, *WORDS_COMPOSTO)}
     candidatos_por_tamanho = {}
     for jogo in jogos:
         if not nome_aceitavel(jogo["nm_jogo"]):
@@ -176,15 +186,16 @@ def main():
         lancado_no_periodo = ano is not None and ANO_MIN <= ano <= ANO_MAX
         conhecido_o_suficiente = qt_tem is not None and qt_tem > QT_TEM_MIN
         if lancado_no_periodo and conhecido_o_suficiente:
-            encontrados.append((ano, jogo["nm_jogo"], palavra, segmentos))
+            modo = modo_sugerido(palavra, segmentos)
+            encontrados.append((modo, ano, jogo["nm_jogo"], palavra, segmentos))
 
     encontrados.sort()
     print(
         f"\n{len(encontrados)} jogos nacionais de {ANO_MIN}-{ANO_MAX}, "
         f"{TAM_MIN}-{TAM_MAX} letras, qt_tem > {QT_TEM_MIN}:\n"
     )
-    for ano, nome_original, palavra, segmentos in encontrados:
-        print(f'{ano}  {nome_original!r:40}  -> ("{palavra}", {segmentos!r}),')
+    for modo, ano, nome_original, palavra, segmentos in encontrados:
+        print(f'[{modo}]  {ano}  {nome_original!r:40}  -> ("{palavra}", {segmentos!r}),')
 
 
 if __name__ == "__main__":

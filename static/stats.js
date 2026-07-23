@@ -1,8 +1,15 @@
-const STATS_KEY = "termeeple:stats";
+function statsKey(modo) {
+    return `termeeple:stats:${modo}`;
+}
 
-function loadStats() {
+function getMaxAttempts() {
+    const board = document.getElementById("board");
+    return parseInt(board.dataset.maxAttempts) || 6;
+}
+
+function loadStats(modo) {
     try {
-        const raw = localStorage.getItem(STATS_KEY);
+        const raw = localStorage.getItem(statsKey(modo));
         if (raw) return JSON.parse(raw);
     } catch (e) {
         /* localStorage indisponível: segue com estatísticas vazias */
@@ -12,21 +19,21 @@ function loadStats() {
         wins: 0,
         currentStreak: 0,
         maxStreak: 0,
-        distribution: [0, 0, 0, 0, 0, 0],
+        distribution: new Array(getMaxAttempts()).fill(0),
         lastPlayedDay: null,
     };
 }
 
-function saveStats(stats) {
+function saveStats(modo, stats) {
     try {
-        localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+        localStorage.setItem(statsKey(modo), JSON.stringify(stats));
     } catch (e) {
         /* ignora se não der pra salvar */
     }
 }
 
-function recordResult(won, attemptsUsed, dayIndex) {
-    const stats = loadStats();
+function recordResult(won, attemptsUsed, dayIndex, modo) {
+    const stats = loadStats(modo);
 
     // trava contra contagem duplicada -- se a pessoa recarregar a página
     // depois de já ter terminado o jogo de hoje, isso impede contar de novo
@@ -47,12 +54,12 @@ function recordResult(won, attemptsUsed, dayIndex) {
     }
 
     stats.lastPlayedDay = dayIndex;
-    saveStats(stats);
+    saveStats(modo, stats);
     return stats;
 }
 
-function renderStats() {
-    const stats = loadStats();
+function renderStats(modo) {
+    const stats = loadStats(modo);
     const winRate = stats.gamesPlayed > 0 ? Math.round((stats.wins / stats.gamesPlayed) * 100) : 0;
 
     document.getElementById("statGames").textContent = stats.gamesPlayed;
