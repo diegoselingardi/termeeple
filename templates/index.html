@@ -30,6 +30,8 @@
     </button>
   </div>
 
+    <div id="revealBanner" class="reveal-banner hidden"></div>
+
     <div id="board" data-word-length="{{ word_length }}" data-max-attempts="{{ max_attempts }}" data-modo="{{ modo }}" data-titulo="{{ titulo }}" style="--cols: {{ word_length }}">
       {% for linha in range(max_attempts) %}
         <div class="board-row">

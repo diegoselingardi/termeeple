@@ -3,6 +3,7 @@ let currentCol = 0;
 let dayIndex = null;
 let guess = "";
 let gameOver = false;
+let revealedWord = null;
 
 const board = document.getElementById("board");
 const WORD_LENGTH = parseInt(board.dataset.wordLength);
@@ -78,8 +79,10 @@ function submitGuess() {
                 gameOver = data.is_game_over;
 
                 if (gameOver) {
+                    revealedWord = data.revealed_word;
                     recordResult(data.is_win, currentRow + 1, dayIndex, MODO);
                     updateLudopediaLink(data.ludopedia_link);
+                    showRevealBanner(data.is_win, revealedWord);
                     showStatsPanel();
                 }
 
@@ -115,7 +118,7 @@ function saveBoardState() {
         rows.push(row);
     }
 
-    const state = { currentRow, currentCol, gameOver, rows };
+    const state = { currentRow, currentCol, gameOver, rows, revealedWord };
     try {
         localStorage.setItem(boardStorageKey(dayIndex), JSON.stringify(state));
     } catch (e) {
@@ -136,6 +139,7 @@ function restoreBoardState() {
     currentRow = saved.currentRow;
     currentCol = saved.currentCol;
     gameOver = saved.gameOver;
+    revealedWord = saved.revealedWord || null;
 
     saved.rows.forEach((row, r) => {
         row.forEach((cell, c) => {
@@ -144,12 +148,28 @@ function restoreBoardState() {
             if (cell.status) tile.classList.add(cell.status);
         });
     });
+
+    if (gameOver && revealedWord) {
+        const venceu = saved.rows.some((row) => row.every((cell) => cell.status === "correct"));
+        showRevealBanner(venceu, revealedWord);
+    }
 }
 
 function showStatsPanel() {
     renderStats(MODO);
     document.getElementById("statsPanel").classList.remove("hidden");
     document.getElementById("backdrop").classList.remove("hidden");
+}
+
+function showRevealBanner(isWin, palavra) {
+    const banner = document.getElementById("revealBanner");
+    if (!palavra) {
+        banner.classList.add("hidden");
+        banner.textContent = "";
+        return;
+    }
+    banner.textContent = isWin ? `Parabéns! A palavra era: ${palavra}` : `Palavra certa: ${palavra}`;
+    banner.classList.remove("hidden");
 }
 
 function updateLudopediaLink(link) {
