@@ -152,7 +152,7 @@ def main():
         salvar_cache(cache)
         print(f"{len(jogos)} jogos base encontrados no catálogo.", file=sys.stderr)
 
-    ja_usadas = {palavra for palavra, _ in (*WORDS_PADRAO, *WORDS_DIFICIL, *WORDS_COMPOSTO)}
+    ja_usadas = {palavra for palavra, _, _ in (*WORDS_PADRAO, *WORDS_DIFICIL, *WORDS_COMPOSTO)}
     candidatos_por_tamanho = {}
     for jogo in jogos:
         if not nome_aceitavel(jogo["nm_jogo"]):
