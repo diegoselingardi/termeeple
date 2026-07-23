@@ -1,0 +1,14 @@
+name: Keep-alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pingar o Termeeple (evita o Render dormir por inatividade)
+        run: curl -sf --max-time 60 https://termeeple.onrender.com/health || true
