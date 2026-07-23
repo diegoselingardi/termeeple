@@ -32,6 +32,18 @@ body {
   justify-content: center;
 }
 
+.reveal-banner {
+  align-self: center;
+  max-width: 420px;
+  margin: 0 0 10px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--orange);
+  color: white;
+  font-weight: 700;
+  text-align: center;
+}
+
 /* ---------- tabuleiro (Grid) ---------- */
 #board {
   display: flex;
