@@ -10,7 +10,7 @@ import words
 from words import WORDS_PADRAO
 
 DIA_FIXO = 0
-PALAVRA_DO_DIA = WORDS_PADRAO[DIA_FIXO][0]  # "TURNO"
+PALAVRA_DO_DIA = WORDS_PADRAO[DIA_FIXO][0]
 MAX_ATTEMPTS_PADRAO = main.MODOS["padrao"]["max_attempts"]
 
 
