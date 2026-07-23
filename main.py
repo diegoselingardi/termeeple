@@ -48,15 +48,17 @@ templates = Jinja2Templates(directory="templates")
 
 
 def montar_teclado(palavra):
-    """Teclado padrão QWERTY -- o Ç só aparece nos dias em que a palavra realmente
-    tem essa letra, pra não poluir o teclado à toa (igual o Termo faz)."""
+    """Teclado padrão QWERTY, igual o Termo: BACK no fim da 2ª linha, ENTER no fim
+    da 3ª. O Ç só aparece nos dias em que a palavra realmente tem essa letra, pra
+    não poluir o teclado à toa."""
     segunda_linha = list("ASDFGHJKL")
     if "Ç" in palavra:
         segunda_linha.append("Ç")
+    segunda_linha.append("BACK")
     return [
         list("QWERTYUIOP"),
         segunda_linha,
-        ["BACK"] + list("ZXCVBNM") + ["ENTER"],
+        list("ZXCVBNM") + ["ENTER"],
     ]
 
 
@@ -76,14 +78,14 @@ MODOS = {
         "prefixo": "/dificil",
         "palavras": WORDS_DIFICIL,
         "max_attempts": 7,
-        "titulo": "Termeeple — Difícil",
+        "titulo": "Termeeple modo difícil",
         "descricao": "Modo Difícil — nomes de 7 a 10 letras",
     },
     "composto": {
         "prefixo": "/composto",
         "palavras": WORDS_COMPOSTO,
         "max_attempts": 8,
-        "titulo": "Termeeple — Composto",
+        "titulo": "Termeeple modo composto",
         "descricao": "Modo Composto — nomes de jogos com espaço, de 5 a 10 letras",
     },
 }
