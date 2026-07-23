@@ -252,3 +252,13 @@ def test_modo_sem_palavras_cadastradas_bloqueia_api(composto_temporariamente_vaz
     assert cliente.get("/api/composto/state").status_code == 503
     resposta = cliente.post("/api/composto/guess", json={"guess": "TESTE", "day_index": 0})
     assert resposta.status_code == 503
+
+
+def test_teclado_nao_mostra_ce_cedilha_quando_palavra_nao_tem():
+    teclas = [tecla for linha in main.montar_teclado("BINGO") for tecla in linha]
+    assert "Ç" not in teclas
+
+
+def test_teclado_mostra_ce_cedilha_quando_palavra_tem():
+    teclas = [tecla for linha in main.montar_teclado("LENÇOIS") for tecla in linha]
+    assert "Ç" in teclas

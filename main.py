@@ -46,11 +46,19 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-KEYBOARD_ROWS = [
-    list("QWERTYUIOP"),
-    list("ASDFGHJKLÇ"),
-    ["BACK"] + list("ZXCVBNM") + ["ENTER"],
-]
+
+def montar_teclado(palavra):
+    """Teclado padrão QWERTY -- o Ç só aparece nos dias em que a palavra realmente
+    tem essa letra, pra não poluir o teclado à toa (igual o Termo faz)."""
+    segunda_linha = list("ASDFGHJKL")
+    if "Ç" in palavra:
+        segunda_linha.append("Ç")
+    return [
+        list("QWERTYUIOP"),
+        segunda_linha,
+        ["BACK"] + list("ZXCVBNM") + ["ENTER"],
+    ]
+
 
 # Três modos independentes -- cada um cicla só pela sua própria lista de palavras,
 # com sua própria sessão de tentativas e (no front-end) suas próprias estatísticas.
@@ -123,7 +131,7 @@ def registrar_modo(nome, config):
                 "day_index": dia_atual,
                 "word_length": len(palavra),
                 "max_attempts": max_attempts,
-                "keyboard_rows": KEYBOARD_ROWS,
+                "keyboard_rows": montar_teclado(palavra),
                 "segment_boundaries": segment_boundaries(segmentos),
                 "modo": nome,
                 "titulo": titulo,
