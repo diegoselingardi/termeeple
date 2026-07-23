@@ -161,13 +161,19 @@ PALAVRA_TESTE_DIFICIL = ("TESTANDO", (8,), LINK_TESTE_DIFICIL)  # 8 letras, só 
 
 @pytest.fixture
 def client_dois_modos(monkeypatch):
+    """Isola o modo Difícil com uma lista de 1 palavra só, pra a palavra do dia ser
+    sempre previsível independente de quantas palavras reais já foram curadas."""
     monkeypatch.setattr(main, "today_index", lambda: DIA_FIXO)
     main.limiter.reset()
-    main.MODOS["dificil"]["palavras"].append(PALAVRA_TESTE_DIFICIL)
+    palavras_dificil = main.MODOS["dificil"]["palavras"]
+    originais = list(palavras_dificil)
+    palavras_dificil.clear()
+    palavras_dificil.append(PALAVRA_TESTE_DIFICIL)
     try:
         yield TestClient(main.app)
     finally:
-        main.MODOS["dificil"]["palavras"].remove(PALAVRA_TESTE_DIFICIL)
+        palavras_dificil.clear()
+        palavras_dificil.extend(originais)
 
 
 def test_modo_dificil_state_reflete_sua_propria_palavra(client_dois_modos):
@@ -221,14 +227,27 @@ def test_patrocinio_sobrescreve_padrao_mas_nao_vaza_pro_dificil(client_dois_modo
     assert resposta_dificil.json()["is_win"] is True
 
 
-def test_modo_sem_palavras_cadastradas_mostra_aviso_na_pagina():
+@pytest.fixture
+def composto_temporariamente_vazio():
+    """Esvazia o modo Composto só durante o teste, pra simular o estado antes de
+    qualquer curadoria -- restaura os dados reais depois, mesmo se o teste falhar."""
+    palavras_composto = main.MODOS["composto"]["palavras"]
+    originais = list(palavras_composto)
+    palavras_composto.clear()
+    try:
+        yield
+    finally:
+        palavras_composto.extend(originais)
+
+
+def test_modo_sem_palavras_cadastradas_mostra_aviso_na_pagina(composto_temporariamente_vazio):
     cliente = TestClient(main.app)
     resposta = cliente.get("/composto")
     assert resposta.status_code == 200
     assert "ainda não tem palavras cadastradas" in resposta.text
 
 
-def test_modo_sem_palavras_cadastradas_bloqueia_api():
+def test_modo_sem_palavras_cadastradas_bloqueia_api(composto_temporariamente_vazio):
     cliente = TestClient(main.app)
     assert cliente.get("/api/composto/state").status_code == 503
     resposta = cliente.post("/api/composto/guess", json={"guess": "TESTE", "day_index": 0})
