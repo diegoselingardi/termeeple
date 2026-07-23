@@ -19,6 +19,7 @@ from words import (
     link_for_day,
     segment_boundaries,
     segments_for_day,
+    sponsored_entry_for_day,
     today_index,
     word_for_day,
 )
@@ -61,6 +62,7 @@ MODOS = {
         "max_attempts": 6,
         "titulo": "Termeeple",
         "descricao": "Uma versão baseada em Wordle para quem joga tabuleiro",
+        "patrocinavel": True,
     },
     "dificil": {
         "prefixo": "/dificil",
@@ -84,6 +86,22 @@ class GuessRequest(BaseModel):
     day_index: int
 
 
+def resolver_entrada_do_dia(dia_atual, config):
+    """Devolve (palavra, segmentos, link) do dia -- usa a palavra patrocinada da data
+    de hoje quando o modo permite (config["patrocinavel"]) e existe uma pra hoje;
+    senão cicla normalmente pela lista de palavras do modo."""
+    if config.get("patrocinavel"):
+        patrocinada = sponsored_entry_for_day(dia_atual)
+        if patrocinada is not None:
+            return patrocinada
+    palavras = config["palavras"]
+    return (
+        word_for_day(dia_atual, palavras),
+        segments_for_day(dia_atual, palavras),
+        link_for_day(dia_atual, palavras),
+    )
+
+
 def registrar_modo(nome, config):
     prefixo = config["prefixo"]
     palavras = config["palavras"]
@@ -97,15 +115,16 @@ def registrar_modo(nome, config):
                 f"<h1>{titulo}</h1><p>Esse modo ainda não tem palavras cadastradas.</p>"
             )
         dia_atual = today_index()
+        palavra, segmentos, _link = resolver_entrada_do_dia(dia_atual, config)
         return templates.TemplateResponse(
             request,
             "index.html",
             {
                 "day_index": dia_atual,
-                "word_length": len(word_for_day(dia_atual, palavras)),
+                "word_length": len(palavra),
                 "max_attempts": max_attempts,
                 "keyboard_rows": KEYBOARD_ROWS,
-                "segment_boundaries": segment_boundaries(segments_for_day(dia_atual, palavras)),
+                "segment_boundaries": segment_boundaries(segmentos),
                 "modo": nome,
                 "titulo": titulo,
                 "descricao": descricao,
@@ -119,9 +138,10 @@ def registrar_modo(nome, config):
         if not palavras:
             raise HTTPException(status_code=503, detail="modo sem palavras cadastradas")
         dia_atual = today_index()
+        palavra, _segmentos, _link = resolver_entrada_do_dia(dia_atual, config)
         return {
             "day_index": dia_atual,
-            "word_length": len(word_for_day(dia_atual, palavras)),
+            "word_length": len(palavra),
             "max_attempts": max_attempts,
         }
 
@@ -139,7 +159,7 @@ def registrar_modo(nome, config):
             )
             raise HTTPException(status_code=409, detail="dia desatualizado, recarregue a página")
 
-        resposta = word_for_day(dia_atual, palavras)
+        resposta, _segmentos, link_ganhou = resolver_entrada_do_dia(dia_atual, config)
 
         if len(payload.guess) != len(resposta) or not payload.guess.isalpha():
             logger.warning("palpite inválido recebido (modo=%s): %r", nome, payload.guess)
@@ -159,7 +179,7 @@ def registrar_modo(nome, config):
         ganhou = is_win(avaliacao)
         acabou = ganhou or tentativas_usadas >= max_attempts
         resposta_revelada = resposta if acabou else None
-        link_ludopedia = link_for_day(dia_atual, palavras) if ganhou else None
+        link_ludopedia = link_ganhou if ganhou else None
 
         logger.info(
             "palpite processado (modo=%s, dia=%s, tentativa=%s/%s, vitoria=%s, fim_de_jogo=%s)",

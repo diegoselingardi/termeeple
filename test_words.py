@@ -1,4 +1,8 @@
+from datetime import timedelta
+
 from words import (
+    LAUNCH_DATE,
+    SPONSORED_WORDS,
     WORDS_COMPOSTO,
     WORDS_DIFICIL,
     WORDS_PADRAO,
@@ -6,6 +10,7 @@ from words import (
     normalize_title,
     segment_boundaries,
     segments_for_day,
+    sponsored_entry_for_day,
     word_for_day,
 )
 
@@ -41,6 +46,17 @@ def test_segments_for_day_bate_com_word_for_day():
 
 def test_link_for_day_e_none_nas_palavras_genericas():
     assert link_for_day(0, WORDS_PADRAO) is None
+
+
+def test_sponsored_entry_for_day_encontra_so_a_data_exata(monkeypatch):
+    dia_alvo = 10
+    data_alvo = LAUNCH_DATE + timedelta(days=dia_alvo)
+    entrada = ("PATROCINADA", (11,), "https://ludopedia.com.br/jogo/patrocinada")
+    monkeypatch.setitem(SPONSORED_WORDS, data_alvo, entrada)
+
+    assert sponsored_entry_for_day(dia_alvo) == entrada
+    assert sponsored_entry_for_day(dia_alvo + 1) is None
+    assert sponsored_entry_for_day(dia_alvo - 1) is None
 
 
 def test_normalize_title_remove_espaco_e_deixa_maiusculo():

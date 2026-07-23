@@ -1,5 +1,5 @@
 import unicodedata
-from datetime import date
+from datetime import date, timedelta
 
 # Cada entrada é (palavra_normalizada, tamanhos_dos_segmentos_originais, link_da_ludopedia).
 # Os segmentos marcam onde havia espaço no nome original
@@ -44,10 +44,25 @@ WORDS_COMPOSTO: list[tuple[str, tuple[int, ...], str | None]] = []
 
 LAUNCH_DATE = date(2026, 7, 7)
 
+# Palavras patrocinadas: valem só na data exata (chave), sem ciclar e sem repetir depois
+# que o dia passa. Preencha aqui pra reservar um dia pra uma editora/parceria -- só
+# adicionar a entrada e commitar, sem mexer em mais nada do código. Escopado só ao modo
+# Padrão (ver MODOS["padrao"]["patrocinavel"] em main.py) -- Difícil/Composto exigem
+# tamanho/estrutura diferentes, então uma palavra patrocinada não serviria pros três.
+SPONSORED_WORDS: dict[date, tuple[str, tuple[int, ...], str | None]] = {
+    # date(2026, 12, 1): ("EXEMPLO", (7,), "https://ludopedia.com.br/jogo/exemplo"),
+}
+
 
 def today_index():
     data_atual = date.today() - LAUNCH_DATE
     return data_atual.days
+
+
+def sponsored_entry_for_day(day_index):
+    """Devolve (palavra, segmentos, link) patrocinados pra data desse day_index, se houver."""
+    data_do_dia = LAUNCH_DATE + timedelta(days=day_index)
+    return SPONSORED_WORDS.get(data_do_dia)
 
 
 def word_for_day(day_index, palavras):

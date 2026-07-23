@@ -1,9 +1,12 @@
 """Testes da API (main.py)."""
 
+from datetime import timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
 import main
+import words
 from words import WORDS_PADRAO
 
 DIA_FIXO = 0
@@ -196,6 +199,26 @@ def test_ludopedia_link_aparece_so_quando_acerta(client_dois_modos):
     )
     assert resposta_certa.json()["is_win"] is True
     assert resposta_certa.json()["ludopedia_link"] == LINK_TESTE_DIFICIL
+
+
+def test_patrocinio_sobrescreve_padrao_mas_nao_vaza_pro_dificil(client_dois_modos, monkeypatch):
+    data_hoje = words.LAUNCH_DATE + timedelta(days=DIA_FIXO)
+    entrada_patrocinada = ("PATROCINADA", (11,), "https://ludopedia.com.br/jogo/patrocinada")
+    monkeypatch.setitem(words.SPONSORED_WORDS, data_hoje, entrada_patrocinada)
+
+    # Padrão passa a jogar a palavra patrocinada, não mais a da lista normal (WORDS_PADRAO)
+    resposta_padrao = client_dois_modos.post(
+        "/api/guess", json={"guess": "PATROCINADA", "day_index": DIA_FIXO}
+    )
+    assert resposta_padrao.status_code == 200
+    assert resposta_padrao.json()["is_win"] is True
+
+    # Difícil não é patrocinável -- continua com sua própria palavra normalmente
+    resposta_dificil = client_dois_modos.post(
+        "/api/dificil/guess", json={"guess": PALAVRA_TESTE_DIFICIL[0], "day_index": DIA_FIXO}
+    )
+    assert resposta_dificil.status_code == 200
+    assert resposta_dificil.json()["is_win"] is True
 
 
 def test_modo_sem_palavras_cadastradas_mostra_aviso_na_pagina():
