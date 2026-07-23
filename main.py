@@ -40,7 +40,7 @@ WORD_LENGTH = 5
 KEYBOARD_ROWS = [
     list("QWERTYUIOP"),
     list("ASDFGHJKLÇ"),
-    ["ENTER"] + list("ZXCVBNM") + ["BACK"],
+    ["BACK"] + list("ZXCVBNM") + ["ENTER"],
 ]
 
 
