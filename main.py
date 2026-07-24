@@ -16,12 +16,10 @@ from words import (
     WORDS_COMPOSTO,
     WORDS_DIFICIL,
     WORDS_PADRAO,
-    link_for_day,
+    entry_for_day,
     segment_boundaries,
-    segments_for_day,
     sponsored_entry_for_day,
     today_index,
-    word_for_day,
 )
 
 logger = logging.getLogger("termeeple")
@@ -104,12 +102,7 @@ def resolver_entrada_do_dia(dia_atual, config):
         patrocinada = sponsored_entry_for_day(dia_atual)
         if patrocinada is not None:
             return patrocinada
-    palavras = config["palavras"]
-    return (
-        word_for_day(dia_atual, palavras),
-        segments_for_day(dia_atual, palavras),
-        link_for_day(dia_atual, palavras),
-    )
+    return entry_for_day(dia_atual, config["palavras"])
 
 
 def registrar_modo(nome, config):

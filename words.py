@@ -676,19 +676,21 @@ def sponsored_entry_for_day(day_index):
     return SPONSORED_WORDS.get(data_do_dia)
 
 
+def entry_for_day(day_index, palavras):
+    """Devolve (palavra, segmentos, link) do dia, ciclando pela lista."""
+    return palavras[day_index % len(palavras)]
+
+
 def word_for_day(day_index, palavras):
-    palavra_index = day_index % len(palavras)
-    return palavras[palavra_index][0]
+    return entry_for_day(day_index, palavras)[0]
 
 
 def segments_for_day(day_index, palavras):
-    palavra_index = day_index % len(palavras)
-    return palavras[palavra_index][1]
+    return entry_for_day(day_index, palavras)[1]
 
 
 def link_for_day(day_index, palavras):
-    palavra_index = day_index % len(palavras)
-    return palavras[palavra_index][2]
+    return entry_for_day(day_index, palavras)[2]
 
 
 def segment_boundaries(segments):
