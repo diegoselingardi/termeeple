@@ -74,6 +74,11 @@ scripts/manual_check.py    # script manual pra testar a API local (fora do pytes
 scripts/fetch_ludopedia_words.py  # busca candidatos a palavra do dia na API da Ludopedia
 \`\`\`
 
+## Documentação adicional
+
+- [`docs/manual.md`](docs/manual.md) — manual didático explicando o funcionamento do jogo, o fluxo completo, conceitos de Python usados no projeto, SOLID e boas práticas (pensado pra quem está aprendendo Python).
+- [`docs/dependencias.md`](docs/dependencias.md) — o que cada dependência do `requirements.txt`/`requirements-dev.txt` faz.
+
 ## Créditos
 
 Paleta de cores baseada na identidade visual do [Canal do Tio Di](https://www.youtube.com/@canaldotiodi).

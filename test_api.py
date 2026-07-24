@@ -115,8 +115,9 @@ SEGMENTOS_PALAVRA_LONGA = (4, 6)  # "BLUE" + "LAGOON"
 @pytest.fixture
 def client_palavra_longa(monkeypatch):
     monkeypatch.setattr(main, "today_index", lambda: DIA_FIXO)
-    monkeypatch.setattr(main, "word_for_day", lambda dia, palavras: PALAVRA_LONGA)
-    monkeypatch.setattr(main, "segments_for_day", lambda dia, palavras: SEGMENTOS_PALAVRA_LONGA)
+    monkeypatch.setattr(
+        main, "entry_for_day", lambda dia, palavras: (PALAVRA_LONGA, SEGMENTOS_PALAVRA_LONGA, None)
+    )
     main.limiter.reset()
     return TestClient(main.app)
 
@@ -192,6 +193,24 @@ def test_tentativas_nao_vazam_entre_modos(client_dois_modos):
     )
     assert resposta_dificil.status_code == 200
     assert resposta_dificil.json()["attempt_number"] == 1
+
+
+def test_rate_limit_e_isolado_por_modo(client_dois_modos):
+    """Regressão: as 3 rotas de guess (uma por modo) colidiam no mesmo registro
+    interno do slowapi porque tinham o mesmo __name__, fazendo cada requisição
+    contar 3x pro limite -- esgotar o rate limit do Padrão não pode bloquear
+    o Difícil, que tem seu próprio contador."""
+    ultima_resposta_padrao = None
+    for _ in range(21):
+        ultima_resposta_padrao = client_dois_modos.post(
+            "/api/guess", json={"guess": "MOEDA", "day_index": DIA_FIXO}
+        )
+    assert ultima_resposta_padrao.status_code == 429
+
+    resposta_dificil = client_dois_modos.post(
+        "/api/dificil/guess", json={"guess": PALAVRA_TESTE_DIFICIL[0], "day_index": DIA_FIXO}
+    )
+    assert resposta_dificil.status_code != 429
 
 
 def test_ludopedia_link_aparece_so_quando_acerta(client_dois_modos):
