@@ -115,8 +115,9 @@ SEGMENTOS_PALAVRA_LONGA = (4, 6)  # "BLUE" + "LAGOON"
 @pytest.fixture
 def client_palavra_longa(monkeypatch):
     monkeypatch.setattr(main, "today_index", lambda: DIA_FIXO)
-    monkeypatch.setattr(main, "word_for_day", lambda dia, palavras: PALAVRA_LONGA)
-    monkeypatch.setattr(main, "segments_for_day", lambda dia, palavras: SEGMENTOS_PALAVRA_LONGA)
+    monkeypatch.setattr(
+        main, "entry_for_day", lambda dia, palavras: (PALAVRA_LONGA, SEGMENTOS_PALAVRA_LONGA, None)
+    )
     main.limiter.reset()
     return TestClient(main.app)
 
