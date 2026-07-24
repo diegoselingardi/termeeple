@@ -1,5 +1,8 @@
 import unicodedata
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
+
+FUSO_BRASIL = ZoneInfo("America/Sao_Paulo")
 
 # Cada entrada é (palavra_normalizada, tamanhos_dos_segmentos_originais, link_da_ludopedia).
 # Os segmentos marcam onde havia espaço no nome original
@@ -660,7 +663,10 @@ SPONSORED_WORDS: dict[date, tuple[str, tuple[int, ...], str | None]] = {
 
 
 def today_index():
-    data_atual = date.today() - LAUNCH_DATE
+    """Índice do dia atual, calculado no fuso de Brasília -- o servidor roda em UTC,
+    então usar date.today() trocaria a palavra às 21h (00h BRT = 03h UTC), não à meia-noite."""
+    hoje_no_brasil = datetime.now(FUSO_BRASIL).date()
+    data_atual = hoje_no_brasil - LAUNCH_DATE
     return data_atual.days
 
 
@@ -670,19 +676,21 @@ def sponsored_entry_for_day(day_index):
     return SPONSORED_WORDS.get(data_do_dia)
 
 
+def entry_for_day(day_index, palavras):
+    """Devolve (palavra, segmentos, link) do dia, ciclando pela lista."""
+    return palavras[day_index % len(palavras)]
+
+
 def word_for_day(day_index, palavras):
-    palavra_index = day_index % len(palavras)
-    return palavras[palavra_index][0]
+    return entry_for_day(day_index, palavras)[0]
 
 
 def segments_for_day(day_index, palavras):
-    palavra_index = day_index % len(palavras)
-    return palavras[palavra_index][1]
+    return entry_for_day(day_index, palavras)[1]
 
 
 def link_for_day(day_index, palavras):
-    palavra_index = day_index % len(palavras)
-    return palavras[palavra_index][2]
+    return entry_for_day(day_index, palavras)[2]
 
 
 def segment_boundaries(segments):
