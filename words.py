@@ -650,6 +650,12 @@ WORDS_COMPOSTO: list[tuple[str, tuple[int, ...], str | None]] = [
     ("AGUASRASAS", (5, 5), "https://ludopedia.com.br/jogo/shallow-sea"),
 ]
 
+# Modo Legacy reaproveita as palavras já curadas dos outros três modos (não tem
+# curadoria própria) -- soma das listas, sem duplicar nada na mão.
+WORDS_LEGACY: list[tuple[str, tuple[int, ...], str | None]] = (
+    WORDS_PADRAO + WORDS_DIFICIL + WORDS_COMPOSTO
+)
+
 LAUNCH_DATE = date(2026, 7, 7)
 
 # Palavras patrocinadas: valem só na data exata (chave), sem ciclar e sem repetir depois

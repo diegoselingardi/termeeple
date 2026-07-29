@@ -395,3 +395,123 @@ body.colorblind .example__tile.present {
   text-align: right;
   white-space: nowrap;
 }
+
+/* ---------- modo Legacy ---------- */
+.box-label__legacy-tag {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--felt);
+  background: var(--ivory);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-left: 4px;
+}
+
+#legacyGame {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  align-self: center;
+}
+
+.legacy-coins {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.legacy-coins__icon {
+  font-size: 1.3rem;
+}
+
+.legacy-coins__label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ivory);
+  opacity: 0.8;
+}
+
+.legacy-reveal-box {
+  align-self: center;
+  min-width: 160px;
+  padding: 14px 20px;
+  border: 2px solid var(--wood);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.legacy-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  align-self: center;
+}
+
+.legacy-form__input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 2px solid var(--wood);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ivory);
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.legacy-form__input::placeholder {
+  color: var(--ivory);
+  opacity: 0.5;
+  text-transform: none;
+}
+
+.legacy-form button {
+  margin: 0;
+}
+
+.legacy-size-message {
+  align-self: center;
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  text-align: center;
+}
+
+.legacy-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  align-self: center;
+}
+
+.legacy-history__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 32px; /* reserva o espaço mesmo vazia, pro bloco não mudar de altura */
+}
+
+.legacy-history__tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.legacy-history__tiles .tile {
+  width: 32px;
+  font-size: 1rem;
+}

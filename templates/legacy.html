@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#16332A">
+  <meta charset="UTF-8">
+  <title>{{ titulo }}</title>
+</head>
+<body>
+  <div class="table">
+    <header class="box-label">
+      <h1 class="box-label__title">TERM<span class="meeple">●</span>EEPLE <small class="box-label__legacy-tag">LEGACY</small></h1>
+      <p class="box-label__subtitle">Aposte suas meeples coins pra descobrir a palavra secreta</p>
+    </header>
+
+    <div class="hud">
+      <button id="helpBtn" class="hud__icon-btn" aria-label="Como jogar">?</button>
+      <button id="statsBtn" class="hud__icon-btn" aria-label="Progresso">📊</button>
+      <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
+      <button id="shareAppBtn" class="hud__icon-btn" aria-label="Compartilhar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div id="revealBanner" class="reveal-banner hidden"></div>
+
+    <div id="legacyGame" data-day-index="{{ day_index }}" data-moedas-iniciais="{{ moedas_iniciais }}" data-titulo="{{ titulo }}">
+      <div class="legacy-coins">
+        <span class="legacy-coins__icon">🪙</span>
+        <span id="coinsValue">{{ moedas_iniciais }}</span>
+        <span class="legacy-coins__label">meeples coins</span>
+      </div>
+
+      <div id="revealBox" class="legacy-reveal-box">?</div>
+
+      <form id="legacyForm" class="legacy-form" autocomplete="off">
+        <input id="legacyInput" class="legacy-form__input" type="text" maxlength="10" autocomplete="off" placeholder="Seu palpite">
+        <button type="submit" class="btn">Confirmar</button>
+      </form>
+      <p id="legacySizeMessage" class="legacy-size-message"></p>
+
+      <div id="legacyHistory" class="legacy-history"></div>
+
+      <div id="keyboard">
+        {% for linha in keyboard_rows %}
+          <div class="keyboard-row">
+            {% for tecla in linha %}
+              <button class="key" data-key="{{ tecla }}" type="button"> {{ tecla }} </button>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <p id="ludopediaLink" class="hidden"></p>
+    </div>
+  </div>
+
+  <div id="backdrop" class="backdrop hidden"></div>
+
+  <div id="helpPanel" class="help-panel hidden">
+    <h2>Como jogar o Legacy</h2>
+    <ul>
+      <li>A palavra secreta pode ter qualquer tamanho -- não tem tabuleiro nem número fixo de tentativas.</li>
+      <li>Você começa com {{ moedas_iniciais }} meeples coins. Cada palpite enviado custa <strong>-1 moeda</strong> de taxa, além do que ele descobrir.</li>
+      <li>Acertar o tamanho do palpite: <strong>+1 moeda</strong>, mas só na primeira vez que você descobrir. Errar o tamanho, maior ou menor: <strong>-1 moeda</strong>, sempre.</li>
+      <li>Acertar uma letra na posição certa: <strong>+1 moeda</strong>, também só na primeira vez que aquela posição é descoberta -- repetir uma letra já confirmada não rende de novo. Letra que não existe na palavra: <strong>-1 moeda</strong>, sempre. Letra certa em posição errada: não muda nada.</li>
+      <li>O jogo acaba quando você acerta a palavra (ela é revelada) ou quando suas moedas chegam a zero -- e aí você nunca vai saber qual era.</li>
+    </ul>
+
+    <div class="example">
+      <div class="example__row">
+        <div class="example__tile correct">T</div>
+        <div class="example__tile">U</div>
+        <div class="example__tile">R</div>
+        <div class="example__tile">N</div>
+        <div class="example__tile">O</div>
+      </div>
+      <p>A letra <strong>T</strong> faz parte da palavra e está na posição certa (+1 moeda).</p>
+    </div>
+
+    <div class="example">
+      <div class="example__row">
+        <div class="example__tile">T</div>
+        <div class="example__tile">R</div>
+        <div class="example__tile present">O</div>
+        <div class="example__tile">C</div>
+        <div class="example__tile">A</div>
+      </div>
+      <p>A letra <strong>O</strong> faz parte da palavra, mas em outra posição (não muda as moedas).</p>
+    </div>
+
+    <div class="example">
+      <div class="example__row">
+        <div class="example__tile">R</div>
+        <div class="example__tile">E</div>
+        <div class="example__tile absent">G</div>
+        <div class="example__tile">R</div>
+        <div class="example__tile">A</div>
+      </div>
+      <p>A letra <strong>G</strong> não faz parte da palavra (-1 moeda).</p>
+    </div>
+
+    <button id="closeHelp" class="btn">Entendi</button>
+  </div>
+
+  <div id="settingsPanel" class="help-panel hidden">
+    <h2>Configurações</h2>
+
+    <div class="setting-row">
+      <div>
+        <strong>Modo daltônico</strong>
+        <p class="setting-row__desc">Troca as cores de acerto por tons mais fáceis de diferenciar.</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="colorblindToggle">
+        <span class="switch__slider"></span>
+      </label>
+    </div>
+
+    {% if outros_modos %}
+    <div class="settings-social">
+      <p class="settings-social__title">Outros modos</p>
+      <div class="settings-social__links">
+        {% for nome_modo, titulo_modo, url_modo in outros_modos %}
+          <a href="{{ url_modo }}" class="btn btn--outline">{{ titulo_modo }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <p class="setting-row__desc">Todos os nomes de jogos foram extraídos de <a href="https://ludopedia.com.br" target="_blank">ludopedia.com.br</a></p>
+
+    <div class="settings-social">
+      <p class="settings-social__title">Siga o Canal do Tio Di</p>
+      <div class="settings-social__links">
+        <a href="https://www.instagram.com/canaldotiodi/" target="_blank" class="btn btn--outline">Instagram</a>
+        <a href="https://www.youtube.com/@canaldotiodi" target="_blank" class="btn btn--outline">YouTube</a>
+        <a href="https://www.tiktok.com/@canaldotiodi" target="_blank" class="btn btn--outline">TikTok</a>
+      </div>
+      </br>
+    </div>
+
+    <button id="closeSettings" class="btn">Fechar</button>
+  </div>
+
+  <div id="statsPanel" class="help-panel hidden">
+    <h2>Progresso</h2>
+    <div class="stats-grid">
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statGames">0</div>
+        <div class="stats-grid__label">jogos</div>
+      </div>
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statWinRate">0%</div>
+        <div class="stats-grid__label">de vitórias</div>
+      </div>
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statStreak">0</div>
+        <div class="stats-grid__label">sequência atual</div>
+      </div>
+      <div class="stats-grid__item">
+        <div class="stats-grid__number" id="statMaxStreak">0</div>
+        <div class="stats-grid__label">melhor sequência</div>
+      </div>
+    </div>
+    <button id="shareStatsBtn" class="btn btn--outline">Compartilhar estatísticas</button>
+    <button id="closeStats" class="btn">Fechar</button>
+  </div>
+
+  <script src="/static/legacy.js"></script>
+</body>
+</html>

@@ -281,3 +281,176 @@ def test_teclado_nao_mostra_ce_cedilha_quando_palavra_nao_tem():
 def test_teclado_mostra_ce_cedilha_quando_palavra_tem():
     teclas = [tecla for linha in main.montar_teclado("LENÇOIS") for tecla in linha]
     assert "Ç" in teclas
+
+
+# ---- Modo Legacy: palpite de qualquer tamanho, sem tentativas fixas, moedas ----
+
+LINK_TESTE_LEGACY = "https://ludopedia.com.br/jogo/tuscany"
+PALAVRA_TESTE_LEGACY = "TUSCANY"  # 7 letras, só pro teste (mesmo exemplo usado ao desenhar o modo)
+
+
+@pytest.fixture
+def client_legacy(monkeypatch):
+    monkeypatch.setattr(main, "today_index", lambda: DIA_FIXO)
+    monkeypatch.setattr(
+        main,
+        "entry_for_day",
+        lambda dia, palavras: (PALAVRA_TESTE_LEGACY, (7,), LINK_TESTE_LEGACY),
+    )
+    main.limiter.reset()
+    return TestClient(main.app)
+
+
+def test_legacy_state_inicial(client_legacy):
+    resposta = client_legacy.get("/api/legacy/state")
+    assert resposta.status_code == 200
+    corpo = resposta.json()
+    assert corpo["coins"] == main.MOEDAS_INICIAIS
+    assert corpo["is_win"] is False
+    assert corpo["is_game_over"] is False
+    assert corpo["revealed_word"] is None
+    assert corpo["ludopedia_link"] is None
+
+
+def test_legacy_guess_correto_vence_e_revela_palavra_e_link(client_legacy):
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": PALAVRA_TESTE_LEGACY, "day_index": DIA_FIXO}
+    )
+    corpo = resposta.json()
+    assert corpo["is_win"] is True
+    assert corpo["is_game_over"] is True
+    assert corpo["revealed_word"] == PALAVRA_TESTE_LEGACY
+    assert corpo["ludopedia_link"] == LINK_TESTE_LEGACY
+    # o palpite vencedor também vem com a avaliação (tudo "correct"), pro
+    # front-end poder desenhar essa tentativa no histórico, toda verde
+    assert [item["letter"] for item in corpo["evaluation"]] == list(PALAVRA_TESTE_LEGACY)
+    assert all(item["status"] == "correct" for item in corpo["evaluation"])
+
+
+def test_legacy_moedas_somam_tamanho_certo_mais_letras_certas(client_legacy):
+    # "TUSCANO" tem o mesmo tamanho de "TUSCANY", descoberto pela 1a vez (+1), e
+    # acerta as 6 primeiras posições pela 1a vez (+6); só erra a última -- "O" não
+    # sobra em nenhum outro lugar da resposta depois de consumidas as 6 letras
+    # certas (-1). Menos a taxa de 1 moeda por palpite (-1). Total: +6.
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "TUSCANO", "day_index": DIA_FIXO}
+    )
+    corpo = resposta.json()
+    assert corpo["is_win"] is False
+    assert corpo["is_game_over"] is False
+    assert corpo["coins"] == main.MOEDAS_INICIAIS + 5
+    assert corpo["size_message"] == "Palpite tem a mesma quantidade de letras que a palavra do dia"
+
+
+def test_legacy_repetir_posicao_ja_confirmada_nao_rende_bonus_de_novo(client_legacy):
+    # "TAAAAAA": acerta as posições 0 (T) e 4 (A) pela 1a vez (+2), tamanho certo
+    # pela 1a vez (+1), as outras 5 posições ficam ausentes (-5), menos a taxa
+    # (-1) -- delta líquido -3.
+    primeira = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "TAAAAAA", "day_index": DIA_FIXO}
+    )
+    assert primeira.json()["coins"] == main.MOEDAS_INICIAIS - 3
+
+    # repetir o mesmo palpite: tamanho e as duas posições já são conhecidos, não
+    # rendem bônus de novo -- só as 5 letras ausentes (-5, sem desconto) e a taxa
+    # (-1) contam, zerando as moedas.
+    segunda = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "TAAAAAA", "day_index": DIA_FIXO}
+    )
+    assert segunda.json()["coins"] == 0
+    assert segunda.json()["is_game_over"] is True
+
+
+def test_legacy_repetir_o_mesmo_palpite_sem_letra_certa_so_cobra_a_taxa_na_segunda_vez(
+    client_legacy,
+):
+    # "USCANYT" é um rearranjo de TUSCANY sem nenhuma letra na posição certa (só
+    # "presente", sem penalidade) -- a 1a vez descobre o tamanho (+1), cancelando
+    # a taxa (-1): saldo não muda. A 2a vez repete a mesma informação (tamanho já
+    # sabido, nenhuma posição nova) e só paga a taxa (-1).
+    primeira = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "USCANYT", "day_index": DIA_FIXO}
+    )
+    assert primeira.json()["coins"] == main.MOEDAS_INICIAIS
+
+    segunda = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "USCANYT", "day_index": DIA_FIXO}
+    )
+    assert segunda.json()["coins"] == main.MOEDAS_INICIAIS - 1
+
+
+def test_legacy_guess_menor_mostra_mensagem_de_tamanho(client_legacy):
+    resposta = client_legacy.post("/api/legacy/guess", json={"guess": "CAO", "day_index": DIA_FIXO})
+    assert resposta.json()["size_message"] == "Palpite tem menos letras que a palavra do dia"
+
+
+def test_legacy_guess_maior_mostra_mensagem_de_tamanho(client_legacy):
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "TUSCANYZZZ", "day_index": DIA_FIXO}
+    )
+    assert resposta.json()["size_message"] == "Palpite tem mais letras que a palavra do dia"
+
+
+def test_legacy_derrota_por_falta_de_moedas_nunca_revela_a_palavra(client_legacy):
+    # "ZZZZZZZ": tamanho certo (+1) mas nenhuma letra existe em TUSCANY (-7) --
+    # de 2 moedas iniciais, isso zera (clamp) e termina o jogo sem revelar nada.
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "ZZZZZZZ", "day_index": DIA_FIXO}
+    )
+    corpo = resposta.json()
+    assert corpo["coins"] == 0
+    assert corpo["is_game_over"] is True
+    assert corpo["is_win"] is False
+    assert corpo["revealed_word"] is None
+    assert corpo["ludopedia_link"] is None
+
+
+def test_legacy_guess_apos_fim_de_jogo_e_bloqueado(client_legacy):
+    client_legacy.post("/api/legacy/guess", json={"guess": "ZZZZZZZ", "day_index": DIA_FIXO})
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": PALAVRA_TESTE_LEGACY, "day_index": DIA_FIXO}
+    )
+    assert resposta.status_code == 400
+
+
+def test_legacy_day_index_desatualizado_e_rejeitado(client_legacy):
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "CAO", "day_index": DIA_FIXO + 1}
+    )
+    assert resposta.status_code == 409
+
+
+def test_legacy_palpite_com_caracteres_invalidos_e_rejeitado(client_legacy):
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "CA3O", "day_index": DIA_FIXO}
+    )
+    assert resposta.status_code == 422
+
+
+def test_legacy_palpite_maior_que_10_letras_e_rejeitado(client_legacy):
+    resposta = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "A" * 11, "day_index": DIA_FIXO}
+    )
+    assert resposta.status_code == 422
+
+
+def test_legacy_rate_limit_bloqueia_excesso_de_requisicoes(client_legacy):
+    for _ in range(20):
+        client_legacy.post("/api/legacy/guess", json={"guess": "CAO", "day_index": DIA_FIXO})
+
+    resposta_extra = client_legacy.post(
+        "/api/legacy/guess", json={"guess": "CAO", "day_index": DIA_FIXO}
+    )
+    assert resposta_extra.status_code == 429
+
+
+def test_legacy_aparece_na_navegacao_dos_outros_modos(client_legacy):
+    resposta = client_legacy.get("/")
+    assert "Termeeple Legacy" in resposta.text
+
+
+def test_pagina_legacy_lista_os_outros_modos(client_legacy):
+    resposta = client_legacy.get("/legacy")
+    assert resposta.status_code == 200
+    assert "Termeeple modo difícil" in resposta.text
+    assert "Termeeple modo composto" in resposta.text

@@ -2,7 +2,7 @@ import logging
 import os
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -11,10 +11,19 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.middleware.sessions import SessionMiddleware
 
-from game_logic import evaluate_guess, is_win
+from game_logic import LetterStatus, evaluate_guess, is_win
+from legacy_logic import (
+    MOEDAS_INICIAIS,
+    TAXA_POR_PALPITE,
+    avaliar_letras,
+    avaliar_tamanho,
+    calcular_delta_moedas_letras_com_descobertas,
+    calcular_delta_moedas_tamanho_com_descoberta,
+)
 from words import (
     WORDS_COMPOSTO,
     WORDS_DIFICIL,
+    WORDS_LEGACY,
     WORDS_PADRAO,
     entry_for_day,
     segment_boundaries,
@@ -45,6 +54,14 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+@app.get("/sw.js")
+def service_worker():
+    """Serve o service worker a partir da raiz -- registrar um SW controla, por
+    padrão, só o diretório onde o arquivo está; servido de /static/sw.js ele só
+    controlaria pedidos sob /static/, nunca as páginas do jogo em si."""
+    return FileResponse("static/sw.js", media_type="application/javascript")
+
+
 def montar_teclado(palavra):
     """Teclado padrão QWERTY, igual o Termo: BACK no fim da 2ª linha, ENTER no fim
     da 3ª. O Ç só aparece nos dias em que a palavra realmente tem essa letra, pra
@@ -56,6 +73,18 @@ def montar_teclado(palavra):
     return [
         list("QWERTYUIOP"),
         segunda_linha,
+        list("ZXCVBNM") + ["ENTER"],
+    ]
+
+
+def montar_teclado_legacy():
+    """Teclado do modo Legacy -- sempre mostra o Ç, diferente dos outros modos.
+    Lá, decidir mostrar o Ç com base na palavra do dia não vaza nada (o tamanho
+    já aparece no tabuleiro); aqui a palavra é secreta, então esconder ou não o Ç
+    condicionalmente entregaria de graça se ela tem ou não essa letra."""
+    return [
+        list("QWERTYUIOP"),
+        list("ASDFGHJKL") + ["Ç", "BACK"],
         list("ZXCVBNM") + ["ENTER"],
     ]
 
@@ -92,6 +121,16 @@ MODOS = {
 class GuessRequest(BaseModel):
     guess: str
     day_index: int
+
+
+# Usado só pra montar os links de "outros modos" na tela de configurações.
+# Inclui o Legacy, que tem rotas próprias (não passa por registrar_modo) por ter
+# uma mecânica bem diferente dos outros três -- sem tabuleiro de tamanho fixo,
+# sem limite de tentativas por contagem, com aposta de moedas em vez disso.
+NAVEGACAO_MODOS = {
+    **{nome: {"titulo": c["titulo"], "prefixo": c["prefixo"]} for nome, c in MODOS.items()},
+    "legacy": {"titulo": "Termeeple Legacy", "prefixo": "/legacy"},
+}
 
 
 def resolver_entrada_do_dia(dia_atual, config):
@@ -132,7 +171,9 @@ def registrar_modo(nome, config):
                 "titulo": titulo,
                 "descricao": descricao,
                 "outros_modos": [
-                    (m, c["titulo"], c["prefixo"] or "/") for m, c in MODOS.items() if m != nome
+                    (m, info["titulo"], info["prefixo"] or "/")
+                    for m, info in NAVEGACAO_MODOS.items()
+                    if m != nome
                 ],
             },
         )
@@ -219,6 +260,137 @@ def registrar_modo(nome, config):
 
 for _nome, _config in MODOS.items():
     registrar_modo(_nome, _config)
+
+
+def resolver_entrada_legacy(dia_atual):
+    """(Palavra, link) do dia do modo Legacy -- não tem patrocínio (isso é exclusivo
+    do Padrão) nem segmentos (não há tabuleiro pra desenhar a quebra visual)."""
+    palavra, _segmentos, link = entry_for_day(dia_atual, WORDS_LEGACY)
+    return palavra, link
+
+
+@app.get("/legacy")
+def legacy_pagina(request: Request):
+    dia_atual = today_index()
+    return templates.TemplateResponse(
+        request,
+        "legacy.html",
+        {
+            "day_index": dia_atual,
+            "moedas_iniciais": MOEDAS_INICIAIS,
+            "keyboard_rows": montar_teclado_legacy(),
+            "titulo": "Termeeple Legacy",
+            "outros_modos": [
+                (m, info["titulo"], info["prefixo"] or "/")
+                for m, info in NAVEGACAO_MODOS.items()
+                if m != "legacy"
+            ],
+        },
+    )
+
+
+@app.get("/api/legacy/state")
+def legacy_state(request: Request):
+    dia_atual = today_index()
+    moedas = request.session.get(f"legacy_moedas_{dia_atual}", MOEDAS_INICIAIS)
+    venceu = request.session.get(f"legacy_venceu_{dia_atual}", False)
+    palavra, link = resolver_entrada_legacy(dia_atual)
+    return {
+        "day_index": dia_atual,
+        "coins": moedas,
+        "is_win": venceu,
+        # só revela a palavra por vitória -- perder por falta de moedas nunca revela
+        "is_game_over": venceu or moedas <= 0,
+        "revealed_word": palavra if venceu else None,
+        "ludopedia_link": link if venceu else None,
+    }
+
+
+@app.post("/api/legacy/guess")
+@limiter.limit("20/minute")
+def legacy_guess(request: Request, payload: GuessRequest):
+    dia_atual = today_index()
+    if payload.day_index != dia_atual:
+        logger.warning(
+            "day_index desatualizado recebido (modo=legacy, cliente=%s, atual=%s)",
+            payload.day_index,
+            dia_atual,
+        )
+        raise HTTPException(status_code=409, detail="dia desatualizado, recarregue a página")
+
+    moedas_key = f"legacy_moedas_{dia_atual}"
+    venceu_key = f"legacy_venceu_{dia_atual}"
+    tamanho_descoberto_key = f"legacy_tamanho_descoberto_{dia_atual}"
+    posicoes_confirmadas_key = f"legacy_posicoes_confirmadas_{dia_atual}"
+    moedas = request.session.get(moedas_key, MOEDAS_INICIAIS)
+    venceu = request.session.get(venceu_key, False)
+
+    if venceu or moedas <= 0:
+        raise HTTPException(status_code=400, detail="jogo já terminou hoje")
+
+    palpite = payload.guess.strip().upper()
+    if not palpite or not palpite.isalpha() or len(palpite) > 10:
+        logger.warning("palpite inválido recebido (modo=legacy): %r", payload.guess)
+        raise HTTPException(status_code=422, detail="palpite inválido")
+
+    resposta, link = resolver_entrada_legacy(dia_atual)
+
+    if palpite == resposta:
+        request.session[venceu_key] = True
+        logger.info("palpite processado (modo=legacy, dia=%s, vitoria=True)", dia_atual)
+        return {
+            "is_win": True,
+            "is_game_over": True,
+            "coins": moedas,
+            "size_message": None,
+            # tudo certo, é o palpite vencedor -- devolve pro front-end poder
+            # desenhar essa tentativa também no histórico, toda verde
+            "evaluation": [{"letter": letra, "status": LetterStatus.CORRECT} for letra in resposta],
+            "revealed_word": resposta,
+            "ludopedia_link": link,
+        }
+
+    # Bônus de tamanho e de posição certa só valem na primeira vez que são
+    # descobertos -- senão dava pra "farmar" moedas reusando uma letra ou um
+    # tamanho já sabidos. Letra ausente e tamanho errado continuam custando
+    # moeda sempre, e cada palpite enviado ainda paga a taxa de aposta.
+    mensagem_tamanho, delta_tamanho_bruto = avaliar_tamanho(len(palpite), len(resposta))
+    tamanho_ja_descoberto = request.session.get(tamanho_descoberto_key, False)
+    delta_tamanho = calcular_delta_moedas_tamanho_com_descoberta(
+        delta_tamanho_bruto, tamanho_ja_descoberto
+    )
+    if delta_tamanho_bruto == 1:
+        request.session[tamanho_descoberto_key] = True
+
+    avaliacao = avaliar_letras(palpite, resposta)
+    posicoes_confirmadas = set(request.session.get(posicoes_confirmadas_key, []))
+    delta_letras, novas_posicoes = calcular_delta_moedas_letras_com_descobertas(
+        avaliacao, posicoes_confirmadas
+    )
+    if novas_posicoes:
+        request.session[posicoes_confirmadas_key] = sorted(posicoes_confirmadas | novas_posicoes)
+
+    moedas = max(0, moedas - TAXA_POR_PALPITE + delta_tamanho + delta_letras)
+    acabou = moedas <= 0
+    request.session[moedas_key] = moedas
+
+    logger.info(
+        "palpite processado (modo=legacy, dia=%s, moedas=%s, fim_de_jogo=%s)",
+        dia_atual,
+        moedas,
+        acabou,
+    )
+
+    return {
+        "is_win": False,
+        "is_game_over": acabou,
+        "coins": moedas,
+        "size_message": mensagem_tamanho,
+        "evaluation": avaliacao,
+        # nunca revela por derrota -- só resolver_entrada_legacy() no caso de vitória sabe a palavra
+        "revealed_word": None,
+        "ludopedia_link": None,
+    }
 
 
 @app.get("/health")
