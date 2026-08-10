@@ -249,6 +249,16 @@ document.getElementById("closeHelp").addEventListener("click", () => {
     document.getElementById("backdrop").classList.add("hidden");
 });
 
+document.getElementById("modesBtn").addEventListener("click", () => {
+    document.getElementById("modesPanel").classList.remove("hidden");
+    document.getElementById("backdrop").classList.remove("hidden");
+});
+
+document.getElementById("closeModes").addEventListener("click", () => {
+    document.getElementById("modesPanel").classList.add("hidden");
+    document.getElementById("backdrop").classList.add("hidden");
+});
+
 document.getElementById("settingsBtn").addEventListener("click", () => {
     document.getElementById("settingsPanel").classList.remove("hidden");
     document.getElementById("backdrop").classList.remove("hidden");
@@ -268,6 +278,7 @@ document.getElementById("closeStats").addEventListener("click", () => {
 
 document.getElementById("backdrop").addEventListener("click", () => {
     document.getElementById("helpPanel").classList.add("hidden");
+    document.getElementById("modesPanel").classList.add("hidden");
     document.getElementById("settingsPanel").classList.add("hidden");
     document.getElementById("statsPanel").classList.add("hidden");
     document.getElementById("backdrop").classList.add("hidden");
@@ -296,5 +307,5 @@ document.getElementById("shareAppBtn").addEventListener("click", shareApp);
 document.getElementById("shareStatsBtn").addEventListener("click", () => shareStats(MODO));
 
 if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/static/sw.js")        
+    navigator.serviceWorker.register("/sw.js")        
 }

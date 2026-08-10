@@ -17,6 +17,12 @@
 
     <div class="hud">
       <button id="helpBtn" class="hud__icon-btn" aria-label="Como jogar">?</button>
+      <button id="modesBtn" class="hud__icon-btn" aria-label="Modos de jogo">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="6" r="3.2"></circle>
+          <path d="M6.5 21l1.3-6.8c.5-2.6 2.2-4.2 4.2-4.2s3.7 1.6 4.2 4.2L17.5 21h-3.2l-.5-3.2h-3.6l-.5 3.2H6.5z"></path>
+        </svg>
+      </button>
       <button id="statsBtn" class="hud__icon-btn" aria-label="Progresso">📊</button>
       <button id="settingsBtn" class="hud__icon-btn" aria-label="Configurações">⚙</button>
       <button id="shareAppBtn" class="hud__icon-btn" aria-label="Compartilhar">
@@ -111,6 +117,18 @@
     <button id="closeHelp" class="btn">Entendi</button>
   </div>
 
+  <div id="modesPanel" class="help-panel hidden">
+    <h2>Modos de jogo</h2>
+    <div class="settings-social">
+      <div class="settings-social__links">
+        {% for nome_modo, titulo_modo, url_modo in outros_modos %}
+          <a href="{{ url_modo }}" class="btn btn--outline">{{ titulo_modo }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    <button id="closeModes" class="btn">Fechar</button>
+  </div>
+
   <div id="settingsPanel" class="help-panel hidden">
     <h2>Configurações</h2>
 
@@ -124,17 +142,6 @@
         <span class="switch__slider"></span>
       </label>
     </div>
-
-    {% if outros_modos %}
-    <div class="settings-social">
-      <p class="settings-social__title">Outros modos</p>
-      <div class="settings-social__links">
-        {% for nome_modo, titulo_modo, url_modo in outros_modos %}
-          <a href="{{ url_modo }}" class="btn btn--outline">{{ titulo_modo }}</a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
 
     <p class="setting-row__desc">Todos os nomes de jogos foram extraídos de <a href="https://ludopedia.com.br" target="_blank">ludopedia.com.br</a></p>
 
