@@ -30,30 +30,28 @@ function renderHistory(history) {
     container.innerHTML = "";
     // mais recente primeiro -- a mensagem de tamanho de cada tentativa não se
     // repete aqui, só aparece uma vez em #legacySizeMessage (a mais atual).
-    // Sempre desenha MAX_HISTORICO_EXIBIDO linhas, preenchidas ou vazias -- assim
-    // a altura do bloco nunca muda, e o teclado logo abaixo não fica "descendo"
-    // conforme os palpites vão sendo enviados.
+    // Mostra só as últimas MAX_HISTORICO_EXIBIDO tentativas (o resto continua
+    // salvo no localStorage). O teclado é fixo na base da tela (position: fixed,
+    // em style.css) -- não depende mais da altura desse bloco, então não precisa
+    // reservar linhas vazias aqui.
     const maisRecentesPrimeiro = [...history].reverse().slice(0, MAX_HISTORICO_EXIBIDO);
 
-    for (let i = 0; i < MAX_HISTORICO_EXIBIDO; i++) {
-        const tentativa = maisRecentesPrimeiro[i];
+    maisRecentesPrimeiro.forEach((tentativa) => {
         const row = document.createElement("div");
         row.className = "legacy-history__row";
 
-        if (tentativa) {
-            const tiles = document.createElement("div");
-            tiles.className = "legacy-history__tiles";
-            tentativa.evaluation.forEach((item) => {
-                const tile = document.createElement("div");
-                tile.className = `tile ${item.status}`;
-                tile.textContent = item.letter;
-                tiles.appendChild(tile);
-            });
-            row.appendChild(tiles);
-        }
+        const tiles = document.createElement("div");
+        tiles.className = "legacy-history__tiles";
+        tentativa.evaluation.forEach((item) => {
+            const tile = document.createElement("div");
+            tile.className = `tile ${item.status}`;
+            tile.textContent = item.letter;
+            tiles.appendChild(tile);
+        });
+        row.appendChild(tiles);
 
         container.appendChild(row);
-    }
+    });
 }
 
 function updateCoins(value) {

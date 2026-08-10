@@ -397,6 +397,30 @@ body.colorblind .example__tile.present {
 }
 
 /* ---------- modo Legacy ---------- */
+
+/* O histórico de palpites cresce sem tamanho fixo (não tem número de tentativas
+   definido), então prender o teclado embaixo da página normal fazia ele "descer"
+   a cada palpite nesse modo -- às vezes saindo da tela. Fixando ele na base da
+   viewport ele nunca se move; padding-bottom no body reserva espaço pra nada do
+   conteúdo ficar escondido atrás dele. */
+body.legacy-page {
+  padding-bottom: 190px;
+}
+
+body.legacy-page #keyboard {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px;
+  margin: 0;
+  padding: 10px 20px 16px;
+  background: var(--felt);
+  box-shadow: 0 -8px 16px -8px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+}
+
 .box-label__legacy-tag {
   display: inline-block;
   vertical-align: middle;
@@ -502,7 +526,6 @@ body.colorblind .example__tile.present {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-height: 32px; /* reserva o espaço mesmo vazia, pro bloco não mudar de altura */
 }
 
 .legacy-history__tiles {
