@@ -5,7 +5,7 @@ os outros três continuam usando evaluate_guess normalmente, sem essa tolerânci
 
 from game_logic import LetterStatus
 
-MOEDAS_INICIAIS = 5
+MOEDAS_INICIAIS = 10
 TAXA_POR_PALPITE = 1  # toda tentativa (certa ou errada) custa 1 moeda, além dos bônus/perdas abaixo
 
 

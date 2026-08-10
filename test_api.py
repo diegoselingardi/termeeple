@@ -353,12 +353,12 @@ def test_legacy_repetir_posicao_ja_confirmada_nao_rende_bonus_de_novo(client_leg
 
     # repetir o mesmo palpite: tamanho e as duas posições já são conhecidos, não
     # rendem bônus de novo -- só as 5 letras ausentes (-5, sem desconto) e a taxa
-    # (-1) contam, zerando as moedas.
+    # (-1) contam, delta líquido -6 (independente de quantas moedas sobraram).
+    moedas_apos_primeira = primeira.json()["coins"]
     segunda = client_legacy.post(
         "/api/legacy/guess", json={"guess": "TAAAAAA", "day_index": DIA_FIXO}
     )
-    assert segunda.json()["coins"] == 0
-    assert segunda.json()["is_game_over"] is True
+    assert segunda.json()["coins"] == max(0, moedas_apos_primeira - 6)
 
 
 def test_legacy_repetir_o_mesmo_palpite_sem_letra_certa_so_cobra_a_taxa_na_segunda_vez(
@@ -391,13 +391,22 @@ def test_legacy_guess_maior_mostra_mensagem_de_tamanho(client_legacy):
     assert resposta.json()["size_message"] == "Palpite tem mais letras que a palavra do dia"
 
 
+def _esgotar_moedas_legacy(client):
+    """ "ZZZZZZZ": tamanho certo só na 1a vez (+1), mas nenhuma letra existe em
+    TUSCANY (-7 sempre) e a taxa (-1) -- repete até zerar as moedas, não importa
+    quantas o modo começa com (limite de segurança bem acima do necessário)."""
+    resposta = None
+    for _ in range(10):
+        resposta = client.post(
+            "/api/legacy/guess", json={"guess": "ZZZZZZZ", "day_index": DIA_FIXO}
+        )
+        if resposta.json()["is_game_over"]:
+            break
+    return resposta
+
+
 def test_legacy_derrota_por_falta_de_moedas_nunca_revela_a_palavra(client_legacy):
-    # "ZZZZZZZ": tamanho certo (+1) mas nenhuma letra existe em TUSCANY (-7) --
-    # de 2 moedas iniciais, isso zera (clamp) e termina o jogo sem revelar nada.
-    resposta = client_legacy.post(
-        "/api/legacy/guess", json={"guess": "ZZZZZZZ", "day_index": DIA_FIXO}
-    )
-    corpo = resposta.json()
+    corpo = _esgotar_moedas_legacy(client_legacy).json()
     assert corpo["coins"] == 0
     assert corpo["is_game_over"] is True
     assert corpo["is_win"] is False
@@ -406,7 +415,7 @@ def test_legacy_derrota_por_falta_de_moedas_nunca_revela_a_palavra(client_legacy
 
 
 def test_legacy_guess_apos_fim_de_jogo_e_bloqueado(client_legacy):
-    client_legacy.post("/api/legacy/guess", json={"guess": "ZZZZZZZ", "day_index": DIA_FIXO})
+    _esgotar_moedas_legacy(client_legacy)
     resposta = client_legacy.post(
         "/api/legacy/guess", json={"guess": PALAVRA_TESTE_LEGACY, "day_index": DIA_FIXO}
     )
