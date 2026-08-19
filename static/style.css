@@ -78,6 +78,14 @@ body {
   font-weight: bold;
   font-size: 1.15rem;
   text-transform: uppercase;
+  /* sem isso, alguns navegadores/webviews mobile não geram evento de "click"
+     ao tocar numa <div> (só reconhecem toque como clicável em elementos com
+     comportamento nativo, tipo <button>, ou com cursor:pointer explícito) --
+     é por isso que os quadrados não respondiam ao toque, mas os botões do
+     teclado (que são <button>) respondiam normalmente */
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 /* essas três ainda não têm efeito -- entram no Módulo 6, quando o JS
