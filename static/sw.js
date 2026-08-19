@@ -3,7 +3,7 @@
 // abaixo). A estratégia stale-while-revalidate abaixo reduz a necessidade de
 // lembrar disso pra próxima vez, mas o bump continua sendo o jeito garantido de
 // forçar a atualização imediata pra quem já tem uma versão antiga instalada.
-const CACHE_NAME = "termeeple-v4";
+const CACHE_NAME = "termeeple-v5";
 
 // Só os arquivos estáticos entram em cache (offline/velocidade): CSS/JS não mudam
 // de um dia pro outro. A página "/" (e outros modos) e as chamadas de API NÃO

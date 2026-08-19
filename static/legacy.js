@@ -2,6 +2,13 @@ const legacyGame = document.getElementById("legacyGame");
 const DAY_INDEX = parseInt(legacyGame.dataset.dayIndex);
 const MAX_HISTORICO_EXIBIDO = 5;
 
+// impede zoom da página via Ctrl+scroll/pinça no trackpad (Chrome/Firefox/Edge
+// mandam isso como wheel com ctrlKey) e via gesto de pinça no Safari
+window.addEventListener("wheel", (event) => {
+    if (event.ctrlKey) event.preventDefault();
+}, { passive: false });
+window.addEventListener("gesturestart", (event) => event.preventDefault());
+
 let gameOver = false;
 
 function historyKey(day) {
@@ -86,11 +93,33 @@ function updateLudopediaLink(link) {
     }
 }
 
+const STATUS_PRIORITY = { absent: 0, present: 1, correct: 2 };
+const letterKeyStatus = {};
+
+function updateKeyColor(letter, status) {
+    const atual = letterKeyStatus[letter];
+    if (atual && STATUS_PRIORITY[atual] >= STATUS_PRIORITY[status]) return;
+    letterKeyStatus[letter] = status;
+    const tecla = document.querySelector(`.key[data-key="${letter}"]`);
+    if (tecla) {
+        tecla.classList.remove("correct", "present", "absent");
+        tecla.classList.add(status);
+    }
+}
+
+function applyKeyboardColors(history) {
+    history.forEach((tentativa) => {
+        tentativa.evaluation.forEach((item) => updateKeyColor(item.letter, item.status));
+    });
+}
+
 fetch("/api/legacy/state")
     .then((response) => response.json())
     .then((data) => {
         updateCoins(data.coins);
-        renderHistory(loadHistory());
+        const history = loadHistory();
+        renderHistory(history);
+        applyKeyboardColors(history);
 
         if (data.is_game_over) {
             gameOver = true;
@@ -125,6 +154,7 @@ document.getElementById("legacyForm").addEventListener("submit", (event) => {
         .then((data) => {
             updateCoins(data.coins);
             input.value = "";
+            data.evaluation.forEach((item) => updateKeyColor(item.letter, item.status));
 
             if (data.is_win) {
                 gameOver = true;
