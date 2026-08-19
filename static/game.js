@@ -11,6 +11,13 @@ const MAX_ATTEMPTS = parseInt(board.dataset.maxAttempts);
 const MODO = board.dataset.modo || "padrao";
 const API_PREFIX = MODO === "padrao" ? "" : `/${MODO}`;
 
+// impede zoom da página via Ctrl+scroll/pinça no trackpad (Chrome/Firefox/Edge
+// mandam isso como wheel com ctrlKey) e via gesto de pinça no Safari
+window.addEventListener("wheel", (event) => {
+    if (event.ctrlKey) event.preventDefault();
+}, { passive: false });
+window.addEventListener("gesturestart", (event) => event.preventDefault());
+
 fetch(`/api${API_PREFIX}/state`)
     .then((response) => response.json())
     .then((data) => {
@@ -22,33 +29,24 @@ function getTile(row, col) {
     return document.getElementById(`tile-${row}-${col}`);
 }
 
-function typeLetter(letter) {
-    if (gameOver) {
-        return;
-    }
-    if (currentCol < WORD_LENGTH) {
-        const tile = getTile(currentRow, currentCol);
-        tile.textContent = letter.toUpperCase();
-        currentCol++;
-    }
+function updateSelection() {
+    document.querySelectorAll(".tile--selected").forEach((tile) => tile.classList.remove("tile--selected"));
+    if (gameOver) return;
+    getTile(currentRow, currentCol).classList.add("tile--selected");
 }
 
-function doBackspace() {
-    if (gameOver) {
-        return;
-    }       
-    if (currentCol > 0) {
-        currentCol--;       
-        const tile = getTile(currentRow, currentCol);
-        tile.textContent = "";
+function isRowFilled(row) {
+    for (let i = 0; i < WORD_LENGTH; i++) {
+        if (!getTile(row, i).textContent) return false;
     }
+    return true;
 }
 
 function submitGuess() {
     if (gameOver) {
         return;
     }
-    if (currentCol === WORD_LENGTH) {
+    if (isRowFilled(currentRow)) {
         guess = "";
         for (let i = 0; i < WORD_LENGTH; i++) {
             guess += getTile(currentRow, i).textContent;
@@ -74,7 +72,8 @@ function submitGuess() {
                 for (let i = 0; i < WORD_LENGTH; i++) {
                     const tile = getTile(currentRow, i);
                     const status = data.evaluation[i].status;
-                    tile.classList.add(status);                        
+                    tile.classList.add(status);
+                    updateKeyColor(data.evaluation[i].letter, status);
                 }
                 gameOver = data.is_game_over;
 
@@ -88,10 +87,25 @@ function submitGuess() {
 
                 currentRow++;
                 currentCol = 0;
+                updateSelection();
                 saveBoardState(); // nova linha
-            }); 
+            });
     }
 };
+
+const STATUS_PRIORITY = { absent: 0, present: 1, correct: 2 };
+const letterKeyStatus = {};
+
+function updateKeyColor(letter, status) {
+    const atual = letterKeyStatus[letter];
+    if (atual && STATUS_PRIORITY[atual] >= STATUS_PRIORITY[status]) return;
+    letterKeyStatus[letter] = status;
+    const tecla = document.querySelector(`.key[data-key="${letter}"]`);
+    if (tecla) {
+        tecla.classList.remove("correct", "present", "absent");
+        tecla.classList.add(status);
+    }
+}
 
 function isModalOpen() {
     return !document.getElementById("backdrop").classList.contains("hidden");
@@ -130,14 +144,18 @@ function restoreBoardState() {
     let saved;
     try {
         const raw = localStorage.getItem(boardStorageKey(dayIndex));
-        if (!raw) return;
+        if (!raw) {
+            updateSelection();
+            return;
+        }
         saved = JSON.parse(raw);
     } catch (e) {
+        updateSelection();
         return;
     }
 
     currentRow = saved.currentRow;
-    currentCol = saved.currentCol;
+    currentCol = Math.min(saved.currentCol, WORD_LENGTH - 1);
     gameOver = saved.gameOver;
     revealedWord = saved.revealedWord || null;
 
@@ -145,9 +163,14 @@ function restoreBoardState() {
         row.forEach((cell, c) => {
             const tile = getTile(r, c);
             tile.textContent = cell.letter;
-            if (cell.status) tile.classList.add(cell.status);
+            if (cell.status) {
+                tile.classList.add(cell.status);
+                updateKeyColor(cell.letter, cell.status);
+            }
         });
     });
+
+    updateSelection();
 
     if (gameOver && revealedWord) {
         const venceu = saved.rows.some((row) => row.every((cell) => cell.status === "correct"));
@@ -185,23 +208,39 @@ function updateLudopediaLink(link) {
 
 function typeLetter(letter) {
     if (gameOver) return;
-    if (currentCol < WORD_LENGTH) {
-        const tile = getTile(currentRow, currentCol);
-        tile.textContent = letter.toUpperCase();
-        currentCol++;
-    }
+    const tile = getTile(currentRow, currentCol);
+    tile.textContent = letter.toUpperCase();
+    currentCol = Math.min(currentCol + 1, WORD_LENGTH - 1);
+    updateSelection();
     saveBoardState(); // nova linha
 }
 
 function doBackspace() {
     if (gameOver) return;
-    if (currentCol > 0) {
-        currentCol--;
-        const tile = getTile(currentRow, currentCol);
+    const tile = getTile(currentRow, currentCol);
+    if (tile.textContent) {
         tile.textContent = "";
+    } else if (currentCol > 0) {
+        currentCol--;
+        getTile(currentRow, currentCol).textContent = "";
     }
+    updateSelection();
     saveBoardState(); // nova linha
 }
+
+document.getElementById("board").addEventListener("click", (event) => {
+    const tile = event.target.closest(".tile");
+    if (!tile || gameOver || isModalOpen()) return;
+
+    const match = tile.id.match(/^tile-(\d+)-(\d+)$/);
+    if (!match) return;
+    const row = parseInt(match[1]);
+    const col = parseInt(match[2]);
+    if (row !== currentRow) return;
+
+    currentCol = col;
+    updateSelection();
+});
 
 window.addEventListener("keydown", (event) => {
     if (gameOver || isModalOpen()) {
