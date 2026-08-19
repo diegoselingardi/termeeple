@@ -58,8 +58,20 @@ templates = Jinja2Templates(directory="templates")
 def service_worker():
     """Serve o service worker a partir da raiz -- registrar um SW controla, por
     padrão, só o diretório onde o arquivo está; servido de /static/sw.js ele só
-    controlaria pedidos sob /static/, nunca as páginas do jogo em si."""
-    return FileResponse("static/sw.js", media_type="application/javascript")
+    controlaria pedidos sob /static/, nunca as páginas do jogo em si.
+
+    Sem Cache-Control aqui, o navegador aplica cache heurístico (baseado no
+    Last-Modified) nessa resposta -- e alguns navegadores/webviews (in-app
+    browser do WhatsApp/Instagram, etc.) não seguem à risca a regra do spec de
+    ignorar esse cache ao checar se o SW mudou. Isso é o que fazia o celular de
+    quem já tinha aberto o app antes ficar preso numa versão antiga mesmo
+    depois de subir o CACHE_NAME: sem revalidação, o navegador nem chegava a
+    baixar o sw.js novo pra perceber que ele mudou."""
+    return FileResponse(
+        "static/sw.js",
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
 
 
 def montar_teclado(palavra):
